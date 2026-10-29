@@ -11,6 +11,7 @@ from app.modules.campuses.models import Campus
 from app.modules.events import service as events_service
 from app.modules.events.models import Event, EventKind, EventStatus
 from app.modules.events.schemas import EventCreate
+from app.modules.exams.models import Certification
 from app.modules.inventory import service as inventory_service
 from app.modules.inventory.models import ProductCategory
 from app.modules.inventory.schemas import ProductCreate, VariantCreate
@@ -18,6 +19,7 @@ from app.modules.notes.models import Note
 from app.modules.shipments import service as shipments_service
 from app.modules.shipments.models import Shipment, ShipmentStatus
 from app.modules.shipments.schemas import ItemIn, ShipmentCreate, StatusChange
+from app.modules.students.models import Student
 from app.modules.todos.models import Todo
 from app.modules.users.models import User, UserRole
 from app.modules.users.service import get_by_email
@@ -178,6 +180,33 @@ async def seed(session: AsyncSession) -> bool:
         tracking_number="JD014600006281",
     )
     to_zurich.shipped_at = utcnow() - timedelta(days=12)
+    await session.commit()
+
+    # Certificaciones y alumnos (para las correcciones de exámenes).
+    session.add(Certification(name="Bronze 1", position=1))
+    session.add_all(
+        [
+            Student(
+                full_name="Lars Nielsen",
+                email="lars@example.com",
+                country_code="DK",
+                campus_id=copenhagen.id,
+            ),
+            Student(
+                full_name="Sanne de Vries",
+                email="sanne@example.com",
+                country_code="NL",
+                campus_id=amsterdam.id,
+            ),
+            Student(
+                full_name="Lukas Huber",
+                email="lukas@example.com",
+                country_code="AT",
+                campus_id=vienna.id,
+            ),
+            Student(full_name="Jonas Weber", email="jonas@example.com", country_code="DE"),
+        ]
+    )
     await session.commit()
     # Apartado para Copenhague (completa su tarea de material).
     await shipment(
