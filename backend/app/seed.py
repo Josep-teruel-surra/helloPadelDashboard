@@ -10,6 +10,9 @@ from app.modules.campuses.models import Campus
 from app.modules.events import service as events_service
 from app.modules.events.models import Event, EventKind, EventStatus
 from app.modules.events.schemas import EventCreate
+from app.modules.inventory import service as inventory_service
+from app.modules.inventory.models import ProductCategory
+from app.modules.inventory.schemas import ProductCreate, VariantCreate
 from app.modules.notes.models import Note
 from app.modules.todos.models import Todo
 from app.modules.users.models import User, UserRole
@@ -104,6 +107,39 @@ async def seed(session: AsyncSession) -> bool:
         kind=EventKind.EXAM,
         start_date=today + timedelta(days=75),
     )
+
+    async def product(name: str, category: ProductCategory, *variants: tuple) -> None:
+        await inventory_service.create_product(
+            session,
+            admin,
+            ProductCreate(
+                name=name,
+                category=category,
+                variants=[
+                    VariantCreate(label=label, initial_stock=stock, low_stock_threshold=threshold)
+                    for label, stock, threshold in variants
+                ],
+            ),
+        )
+
+    await product(
+        "Camiseta Hello Padel 2026",
+        ProductCategory.CLOTHING,
+        ("XS", 10, None),
+        ("S", 40, 10),
+        ("M", 60, 15),
+        ("L", 45, 15),
+        ("XL", 20, 5),
+    )
+    await product(
+        "Libro Nivel 1",
+        ProductCategory.BOOK,
+        ("Español", 30, 10),
+        ("Inglés", 25, 10),
+        ("Alemán", 8, 10),
+    )
+    await product("Libro Nivel 2", ProductCategory.BOOK, ("Español", 20, 5), ("Inglés", 12, 5))
+    await product("Bolsa de tela Hello Padel", ProductCategory.OTHER, ("Única", 50, None))
 
     session.add_all(
         [

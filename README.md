@@ -66,6 +66,12 @@ docker compose exec backend alembic upgrade head
 
 Al crear un módulo nuevo, importa sus modelos en `backend/app/models.py` para que Alembic los detecte.
 
+Para comprobar que las migraciones coinciden con los modelos (los tests crean las tablas directamente desde los modelos, así que no lo detectan):
+
+```bash
+docker compose exec backend alembic check
+```
+
 ## Estructura del backend
 
 ```
@@ -78,7 +84,10 @@ backend/app/
 │   ├── todos/
 │   ├── notes/
 │   ├── weather/
-│   └── home/
+│   ├── home/
+│   ├── campuses/
+│   ├── events/
+│   └── inventory/
 ├── models.py   # registro de modelos para Alembic
 ├── cli.py      # comandos de gestión
 └── main.py

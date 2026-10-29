@@ -6,6 +6,7 @@ from app.modules.auth.router import router as auth_router
 from app.modules.campuses.router import router as campuses_router
 from app.modules.events.router import router as events_router
 from app.modules.home.router import router as home_router
+from app.modules.inventory.router import router as inventory_router
 from app.modules.notes.router import router as notes_router
 from app.modules.todos.router import router as todos_router
 from app.modules.users.router import router as users_router
@@ -43,6 +44,7 @@ def create_app() -> FastAPI:
     api.include_router(home_router)
     api.include_router(campuses_router)
     api.include_router(events_router)
+    api.include_router(inventory_router)
     app.include_router(api)
     return app
 

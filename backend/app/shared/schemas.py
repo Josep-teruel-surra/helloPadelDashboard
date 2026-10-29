@@ -7,7 +7,7 @@ Password = Annotated[str, StringConstraints(min_length=8, max_length=128)]
 FullName = Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=120)]
 
 
-def _blank_to_none(value: Any) -> Any:
+def blank_to_none(value: Any) -> Any:
     if isinstance(value, str):
         value = value.strip()
         return value or None
@@ -23,18 +23,18 @@ CountryCode = Annotated[str, StringConstraints(pattern=r"^[A-Za-z]{2}$"), AfterV
 
 # Textos opcionales: "" o solo espacios se guardan como null. La restricción va en la rama str.
 OptionalText120 = Annotated[
-    Annotated[str, Field(max_length=120)] | None, BeforeValidator(_blank_to_none)
+    Annotated[str, Field(max_length=120)] | None, BeforeValidator(blank_to_none)
 ]
 OptionalText160 = Annotated[
-    Annotated[str, Field(max_length=160)] | None, BeforeValidator(_blank_to_none)
+    Annotated[str, Field(max_length=160)] | None, BeforeValidator(blank_to_none)
 ]
 OptionalText200 = Annotated[
-    Annotated[str, Field(max_length=200)] | None, BeforeValidator(_blank_to_none)
+    Annotated[str, Field(max_length=200)] | None, BeforeValidator(blank_to_none)
 ]
 OptionalShortText = Annotated[
-    Annotated[str, Field(max_length=40)] | None, BeforeValidator(_blank_to_none)
+    Annotated[str, Field(max_length=40)] | None, BeforeValidator(blank_to_none)
 ]
-OptionalEmail = Annotated[EmailStr | None, BeforeValidator(_blank_to_none), AfterValidator(_lower)]
-OptionalCountryCode = Annotated[CountryCode | None, BeforeValidator(_blank_to_none)]
+OptionalEmail = Annotated[EmailStr | None, BeforeValidator(blank_to_none), AfterValidator(_lower)]
+OptionalCountryCode = Annotated[CountryCode | None, BeforeValidator(blank_to_none)]
 
 Markdown = Annotated[str, Field(max_length=50_000)]

@@ -98,13 +98,6 @@ def upgrade() -> None:
             ["created_by_id"], ["users.id"], name=op.f("fk_events_created_by_id_users")
         ),
         sa.ForeignKeyConstraint(
-            ["material_todo_id"],
-            ["todos.id"],
-            name=op.f("fk_events_material_todo_id_todos"),
-            ondelete="SET NULL",
-            use_alter=True,
-        ),
-        sa.ForeignKeyConstraint(
             ["responsible_id"],
             ["users.id"],
             name=op.f("fk_events_responsible_id_users"),
@@ -116,6 +109,15 @@ def upgrade() -> None:
         "ix_events_campus_id_start_date", "events", ["campus_id", "start_date"], unique=False
     )
     op.create_index("ix_events_start_date", "events", ["start_date"], unique=False)
+    # Explícita: Alembic omite dentro de create_table las FK marcadas con use_alter.
+    op.create_foreign_key(
+        op.f("fk_events_material_todo_id_todos"),
+        "events",
+        "todos",
+        ["material_todo_id"],
+        ["id"],
+        ondelete="SET NULL",
+    )
     op.add_column("notes", sa.Column("event_id", sa.Uuid(), nullable=True))
     op.create_index("ix_notes_event_id", "notes", ["event_id"], unique=False)
     op.create_foreign_key(
@@ -145,6 +147,7 @@ def downgrade() -> None:
     op.drop_constraint(op.f("fk_notes_event_id_events"), "notes", type_="foreignkey")
     op.drop_index("ix_notes_event_id", table_name="notes")
     op.drop_column("notes", "event_id")
+    op.drop_constraint(op.f("fk_events_material_todo_id_todos"), "events", type_="foreignkey")
     op.drop_index("ix_events_start_date", table_name="events")
     op.drop_index("ix_events_campus_id_start_date", table_name="events")
     op.drop_table("events")
