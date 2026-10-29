@@ -24,6 +24,8 @@ class Settings(BaseSettings):
 
     refresh_cookie_name: str = "hp_refresh"
     cookie_secure: bool = False
+    # "none" cuando el frontend está en otro dominio (p. ej. GitHub Pages); exige cookie_secure.
+    cookie_samesite: Literal["lax", "strict", "none"] = "lax"
 
     # Orígenes separados por comas; vacío desactiva CORS.
     cors_origins: str = ""
@@ -42,6 +44,12 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
+
+    @model_validator(mode="after")
+    def _check_cookie_settings(self) -> "Settings":
+        if self.cookie_samesite == "none" and not self.cookie_secure:
+            raise ValueError("COOKIE_SAMESITE=none requiere COOKIE_SECURE=true (HTTPS)")
+        return self
 
     @model_validator(mode="after")
     def _check_production_secret(self) -> "Settings":

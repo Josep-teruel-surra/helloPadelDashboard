@@ -134,3 +134,33 @@ docker compose up -d --build --renew-anon-volumes frontend
 - `POST /api/auth/refresh` rota el refresh token. Si se reutiliza un token ya rotado (fuera de una ventana de 30 s para pestañas simultáneas), se cierran todas las sesiones del usuario.
 - `POST /api/auth/logout` revoca el refresh token.
 - Desactivar un usuario o resetear su contraseña cierra todas sus sesiones.
+
+## Despliegue: frontend en GitHub Pages
+
+El frontend se publica en `https://josep-teruel-surra.github.io/helloPadelDashboard/` con el workflow `.github/workflows/pages.yml`, que se lanza en cada push a `main` que toque `frontend/`. **El backend y Postgres van aparte**: GitHub Pages solo sirve archivos estáticos.
+
+### 1. Backend (en cualquier servidor con HTTPS)
+
+Imagen `backend/Dockerfile` (`--build-arg INSTALL_DEV=false`) más un Postgres. Variables mínimas:
+
+```
+ENVIRONMENT=production
+DATABASE_URL=postgresql+asyncpg://usuario:contraseña@host:5432/hellopadel
+JWT_SECRET=<openssl rand -hex 32>
+COOKIE_SECURE=true
+COOKIE_SAMESITE=none
+CORS_ORIGINS=https://josep-teruel-surra.github.io
+```
+
+Al arrancar aplica las migraciones. Después, crea el primer admin con `python -m app.cli create-admin`.
+
+### 2. GitHub
+
+1. Settings → Pages → Source: **GitHub Actions**.
+2. Settings → Secrets and variables → Actions → Variables: `API_URL` = URL del backend (p. ej. `https://api.tudominio.com`, sin `/api`).
+3. Push a `main` (o lanza el workflow a mano desde Actions).
+
+### Aviso sobre Safari y github.io
+
+Con el frontend en `github.io` y el backend en otro dominio, la cookie de sesión es de terceros. **Safari bloquea las cookies de terceros**, así que al recargar la página la sesión se pierde y hay que volver a entrar. Para evitarlo, usa un dominio propio para los dos (p. ej. `dashboard.tudominio.com` en Pages y `api.tudominio.com` para el backend): pasan a ser del mismo sitio, puedes dejar `COOKIE_SAMESITE=lax` y define la variable `BASE_PATH=/` en GitHub.
+

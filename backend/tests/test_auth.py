@@ -189,3 +189,25 @@ async def test_refresh_fails_for_deactivated_user(
         f"/api/users/{worker.id}", json={"is_active": False}, headers=auth_headers(admin)
     )
     assert (await refresh_with(client, token)).status_code == 401
+
+
+@pytest.mark.parametrize("path", ["/api/auth/refresh", "/api/auth/logout"])
+async def test_cookie_endpoints_require_ajax_header(
+    client: AsyncClient, worker: User, path: str
+) -> None:
+    token = (await login(client, worker.email)).cookies[COOKIE]
+    client.cookies.clear()
+    resp = await client.post(path, headers={"Cookie": f"{COOKIE}={token}", "X-Requested-With": ""})
+    assert resp.status_code == 403
+    # El token sigue siendo válido: la petición rechazada no lo ha rotado ni revocado.
+    assert (await refresh_with(client, token)).status_code == 200
+
+
+def test_samesite_none_requires_secure_cookies() -> None:
+    from pydantic import ValidationError
+
+    from app.core.config import Settings
+
+    with pytest.raises(ValidationError):
+        Settings(cookie_samesite="none", cookie_secure=False)
+    assert Settings(cookie_samesite="none", cookie_secure=True).cookie_samesite == "none"

@@ -34,7 +34,8 @@ function NotFound() {
   );
 }
 
-const router = createBrowserRouter([
+const router = createBrowserRouter(
+  [
   { path: "/login", element: <LoginPage /> },
   {
     element: <RequireAuth />,
@@ -67,7 +68,10 @@ const router = createBrowserRouter([
       },
     ],
   },
-]);
+  ],
+  // En GitHub Pages la app vive en /helloPadelDashboard/; en local, en /.
+  { basename: import.meta.env.BASE_URL.replace(/\/$/, "") || "/" },
+);
 
 export function App() {
   return <RouterProvider router={router} />;

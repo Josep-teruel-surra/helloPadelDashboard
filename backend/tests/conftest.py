@@ -62,7 +62,12 @@ async def _clean_tables() -> AsyncIterator[None]:
 
 @pytest.fixture
 async def client() -> AsyncIterator[AsyncClient]:
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+    # Como el frontend: la cabecera que exigen /auth/refresh y /auth/logout.
+    async with AsyncClient(
+        transport=ASGITransport(app=app),
+        base_url="http://test",
+        headers={"X-Requested-With": "XMLHttpRequest"},
+    ) as c:
         yield c
 
 

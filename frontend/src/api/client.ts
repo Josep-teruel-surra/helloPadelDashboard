@@ -1,5 +1,13 @@
 import type { TokenResponse } from "./types";
 
+// Vacío: la API está en el mismo origen (/api, proxy de Vite o nginx).
+// En GitHub Pages apunta al backend, p. ej. https://api.ejemplo.com.
+const API_URL = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
+
+// Cabeceras de todas las peticiones. X-Requested-With obliga al navegador a hacer preflight
+// CORS, así otra web no puede lanzar /auth/refresh ni /auth/logout con nuestra cookie.
+const BASE_HEADERS = { "X-Requested-With": "XMLHttpRequest" };
+
 // El access token vive solo en memoria; el refresh token va en una cookie httpOnly.
 let accessToken: string | null = null;
 let refreshInFlight: Promise<TokenResponse | null> | null = null;
@@ -37,7 +45,7 @@ function buildUrl(path: string, query?: Record<string, QueryValue>): string {
     if (value !== undefined && value !== null && value !== "") params.set(key, String(value));
   }
   const qs = params.toString();
-  return `/api${path}${qs ? `?${qs}` : ""}`;
+  return `${API_URL}/api${path}${qs ? `?${qs}` : ""}`;
 }
 
 interface ValidationIssue {
@@ -63,7 +71,11 @@ async function toApiError(resp: Response): Promise<ApiError> {
 export function refreshSession(): Promise<TokenResponse | null> {
   refreshInFlight ??= (async () => {
     try {
-      const resp = await fetch("/api/auth/refresh", { method: "POST", credentials: "same-origin" });
+      const resp = await fetch(buildUrl("/auth/refresh"), {
+        method: "POST",
+        headers: BASE_HEADERS,
+        credentials: "include",
+      });
       if (!resp.ok) {
         accessToken = null;
         return null;
@@ -86,11 +98,13 @@ export async function api<T>(path: string, options: RequestOptions = {}): Promis
     fetch(url, {
       method: options.method ?? "GET",
       headers: {
+        ...BASE_HEADERS,
         ...(options.body !== undefined && { "Content-Type": "application/json" }),
         ...(accessToken && { Authorization: `Bearer ${accessToken}` }),
       },
       body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-      credentials: "same-origin",
+      // "include": la cookie de refresh también viaja si la API está en otro dominio.
+      credentials: "include",
       signal: options.signal,
     });
 
