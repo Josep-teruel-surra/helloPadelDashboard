@@ -4,6 +4,10 @@ import type { TokenResponse } from "./types";
 // En GitHub Pages apunta al backend, p. ej. https://api.ejemplo.com.
 const API_URL = (import.meta.env.VITE_API_URL ?? "").replace(/\/$/, "");
 
+// Demo sin backend (GitHub Pages): las peticiones las responde src/demo/mockApi.ts.
+// Al ser una constante de compilación, en el build normal ese código ni se incluye.
+export const DEMO = import.meta.env.VITE_DEMO === "true";
+
 // Cabeceras de todas las peticiones. X-Requested-With obliga al navegador a hacer preflight
 // CORS, así otra web no puede lanzar /auth/refresh ni /auth/logout con nuestra cookie.
 const BASE_HEADERS = { "X-Requested-With": "XMLHttpRequest" };
@@ -69,6 +73,13 @@ async function toApiError(resp: Response): Promise<ApiError> {
 
 /** Pide un access token nuevo con la cookie de refresh. Las llamadas simultáneas comparten petición. */
 export function refreshSession(): Promise<TokenResponse | null> {
+  if (DEMO) {
+    return import("@/demo/mockApi").then(({ demoRefresh }) => {
+      const data = demoRefresh();
+      accessToken = data?.access_token ?? null;
+      return data;
+    });
+  }
   refreshInFlight ??= (async () => {
     try {
       const resp = await fetch(buildUrl("/auth/refresh"), {
@@ -93,6 +104,10 @@ export function refreshSession(): Promise<TokenResponse | null> {
 }
 
 export async function api<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  if (DEMO) {
+    const { demoRequest } = await import("@/demo/mockApi");
+    return (await demoRequest(path, options)) as T;
+  }
   const url = buildUrl(path, options.query);
   const send = () =>
     fetch(url, {

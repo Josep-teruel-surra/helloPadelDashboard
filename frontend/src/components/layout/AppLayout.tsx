@@ -2,6 +2,7 @@ import { LogOut, Menu, UserRound, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, NavLink, Outlet, useLocation } from "react-router";
 
+import { DEMO } from "@/api/client";
 import { useAuth, useCurrentUser } from "@/auth/AuthContext";
 import { cn } from "@/lib/cn";
 import { Logo } from "./Logo";
@@ -127,6 +128,11 @@ export function AppLayout() {
         </div>
       )}
 
+      {DEMO && (
+        <p className="bg-brand px-4 py-1.5 text-center text-xs font-semibold text-carbon">
+          Demo con datos de ejemplo: puedes navegar por todo, pero los cambios no se guardan.
+        </p>
+      )}
       <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
         <Outlet />
       </main>

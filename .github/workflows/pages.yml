@@ -1,10 +1,11 @@
 name: Frontend en GitHub Pages
 
 # Compila el frontend y lo publica en https://<usuario>.github.io/<repo>/.
-# Requiere en Settings → Pages la fuente "GitHub Actions" y en Settings → Secrets and
-# variables → Actions → Variables:
-#   API_URL    URL pública del backend (https://…), sin /api al final. Obligatoria.
-#   BASE_PATH  Opcional. Por defecto /<repo>/; pon "/" si usas un dominio propio.
+# Requiere en Settings → Pages la fuente "GitHub Actions". Variables opcionales en
+# Settings → Secrets and variables → Actions → Variables:
+#   API_URL    URL pública del backend (https://…), sin /api al final. Si no existe, se
+#              publica la demo con datos de ejemplo (sin backend, cambios sin guardar).
+#   BASE_PATH  Por defecto /<repo>/; pon "/" si usas un dominio propio.
 
 on:
   push:
@@ -31,15 +32,17 @@ jobs:
         working-directory: frontend
     env:
       VITE_API_URL: ${{ vars.API_URL }}
+      VITE_DEMO: ${{ vars.API_URL == '' }}
       VITE_BASE_PATH: ${{ vars.BASE_PATH || format('/{0}/', github.event.repository.name) }}
     steps:
       - uses: actions/checkout@v4
 
-      - name: Comprobar que hay backend configurado
+      - name: Modo de publicación
         run: |
-          if [ -z "$VITE_API_URL" ]; then
-            echo "::error::Falta la variable API_URL (Settings → Secrets and variables → Actions → Variables)."
-            exit 1
+          if [ "$VITE_DEMO" = "true" ]; then
+            echo "::notice::Sin API_URL: se publica la demo con datos de ejemplo."
+          else
+            echo "::notice::Frontend conectado a $VITE_API_URL"
           fi
 
       - uses: actions/setup-node@v4

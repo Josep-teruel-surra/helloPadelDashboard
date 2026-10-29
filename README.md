@@ -139,6 +139,19 @@ docker compose up -d --build --renew-anon-volumes frontend
 
 El frontend se publica en `https://josep-teruel-surra.github.io/helloPadelDashboard/` con el workflow `.github/workflows/pages.yml`, que se lanza en cada push a `main` que toque `frontend/`. **El backend y Postgres van aparte**: GitHub Pages solo sirve archivos estáticos.
 
+### Demo sin backend
+
+Mientras no exista la variable `API_URL` en GitHub, el workflow publica una **demo con datos de ejemplo**: se entra como Ana, Bruno o Laura (admin) desde el propio login, se puede navegar por todo y los cambios no se guardan. Responde `frontend/src/demo/mockApi.ts` a partir de `frontend/src/demo/snapshot.json`, una foto de la API con el seed cuyas fechas se desplazan al día en que se abre.
+
+Para regenerar la foto tras cambiar el seed o la API:
+
+```bash
+docker compose exec backend sh -c "alembic downgrade base && alembic upgrade head && python -m app.cli seed"
+docker compose exec -T backend python -m scripts.demo_snapshot > frontend/src/demo/snapshot.json
+```
+
+Para verla en local: `VITE_DEMO=true npm run dev` dentro de `frontend/`.
+
 ### 1. Backend (en cualquier servidor con HTTPS)
 
 Imagen `backend/Dockerfile` (`--build-arg INSTALL_DEV=false`) más un Postgres. Variables mínimas:
@@ -157,7 +170,7 @@ Al arrancar aplica las migraciones. Después, crea el primer admin con `python -
 ### 2. GitHub
 
 1. Settings → Pages → Source: **GitHub Actions**.
-2. Settings → Secrets and variables → Actions → Variables: `API_URL` = URL del backend (p. ej. `https://api.tudominio.com`, sin `/api`).
+2. Settings → Secrets and variables → Actions → Variables: `API_URL` = URL del backend (p. ej. `https://api.tudominio.com`, sin `/api`). Sin ella se publica la demo.
 3. Push a `main` (o lanza el workflow a mano desde Actions).
 
 ### Aviso sobre Safari y github.io
