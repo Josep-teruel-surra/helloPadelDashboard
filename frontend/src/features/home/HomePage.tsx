@@ -9,6 +9,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import { NoteCard } from "@/features/notes/NotesPage";
 import { DueBadge, TodoCheckbox } from "@/features/todos/TodoItem";
 import { WeatherWidget } from "@/features/weather/WeatherWidget";
+import { ExamsCard } from "./ExamsWidget";
 import { LogisticsCard, UpcomingEventsCard } from "./LogisticsWidgets";
 
 function greeting(): string {
@@ -116,10 +117,11 @@ export function HomePage() {
           className="md:col-span-2"
           events={summary.data?.logistics.upcoming_events}
         />
-        <LogisticsCard className="md:col-span-2 xl:col-span-1" logistics={summary.data?.logistics} />
+        <ExamsCard exams={summary.data?.exams} />
+        <LogisticsCard logistics={summary.data?.logistics} />
 
         <Card
-          className="md:col-span-2"
+          className="md:col-span-2 xl:col-span-1"
           title="Últimas notas"
           icon={<NotebookPen className="size-4" aria-hidden />}
           actions={<SeeAll to="/notas">Ver todas</SeeAll>}
@@ -127,7 +129,7 @@ export function HomePage() {
           {summary.isPending ? (
             <Spinner />
           ) : summary.data && summary.data.notes.length > 0 ? (
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
               {summary.data.notes.map((note) => (
                 <NoteCard key={note.id} note={note} />
               ))}

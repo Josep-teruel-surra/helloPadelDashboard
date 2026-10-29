@@ -6,7 +6,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.security import local_today, utcnow
 from app.modules.events import service as events_service
 from app.modules.events.models import Event, EventStatus
-from app.modules.home.schemas import HomeSummary, LogisticsSummary, LowStockItem, TodoSummary
+from app.modules.exams import service as exams_service
+from app.modules.exams.models import ExamStatus, ExamSubmission
+from app.modules.home.schemas import (
+    ExamsSummary,
+    HomeSummary,
+    LogisticsSummary,
+    LowStockItem,
+    TodoSummary,
+)
 from app.modules.inventory import service as inventory_service
 from app.modules.inventory.models import Product, ProductVariant
 from app.modules.notes import service as notes_service
@@ -91,6 +99,46 @@ async def _logistics(session: AsyncSession, user: User) -> LogisticsSummary:
     )
 
 
+# Estados en los que aún hay que corregir.
+TO_CORRECT = (ExamStatus.RECEIVED, ExamStatus.IN_REVIEW, ExamStatus.ON_HOLD)
+
+
+async def _count_exams(session: AsyncSession, *conditions: ColumnElement[bool]) -> int:
+    query = select(func.count()).select_from(ExamSubmission).where(*conditions)
+    return await session.scalar(query) or 0
+
+
+async def _exams(session: AsyncSession, user: User) -> ExamsSummary:
+    to_correct = ExamSubmission.status.in_(TO_CORRECT)
+    mine_filter = (to_correct, ExamSubmission.assignee_id == user.id)
+    mine = await session.scalars(
+        select(ExamSubmission)
+        .where(*mine_filter)
+        .order_by(ExamSubmission.due_on, ExamSubmission.received_on)
+        .limit(LIST_LIMIT)
+    )
+    at_risk = await session.scalars(
+        select(ExamSubmission)
+        .where(
+            to_correct,
+            ExamSubmission.saved_url.is_(None),
+            ExamSubmission.link_expires_on
+            <= local_today() + timedelta(days=exams_service.LINK_WARNING_DAYS),
+        )
+        .order_by(ExamSubmission.link_expires_on)
+        .limit(LIST_LIMIT)
+    )
+    return ExamsSummary(
+        mine=await exams_service.to_reads(session, list(mine), user),
+        mine_count=await _count_exams(session, *mine_filter),
+        unassigned_count=await _count_exams(
+            session, to_correct, ExamSubmission.assignee_id.is_(None)
+        ),
+        to_notify_count=await _count_exams(session, ExamSubmission.status == ExamStatus.CORRECTED),
+        links_at_risk=await exams_service.to_reads(session, list(at_risk), user),
+    )
+
+
 async def get_summary(session: AsyncSession, user: User) -> HomeSummary:
     pending = Todo.is_done.is_(False)
     personal = await todos_service.list_todos(
@@ -119,6 +167,7 @@ async def get_summary(session: AsyncSession, user: User) -> HomeSummary:
                 visible_to(Todo.scope, Todo.created_by_id, user),
             ),
         ),
+        exams=await _exams(session, user),
         logistics=await _logistics(session, user),
         notes=[notes_service.to_read(n, user) for n in notes],
     )

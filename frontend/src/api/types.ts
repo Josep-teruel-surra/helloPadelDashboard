@@ -63,6 +63,13 @@ export interface LowStockItem {
 }
 
 export interface HomeSummary {
+  exams: {
+    mine: ExamSubmission[];
+    mine_count: number;
+    unassigned_count: number;
+    to_notify_count: number;
+    links_at_risk: ExamSubmission[];
+  };
   logistics: {
     upcoming_events: AcademyEvent[];
     to_prepare: Shipment[];

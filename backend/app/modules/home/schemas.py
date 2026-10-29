@@ -3,6 +3,7 @@ import uuid
 from pydantic import BaseModel, Field
 
 from app.modules.events.schemas import EventRead
+from app.modules.exams.schemas import SubmissionRead
 from app.modules.notes.schemas import NoteRead
 from app.modules.shipments.schemas import ShipmentRead
 from app.modules.todos.schemas import TodoRead
@@ -39,7 +40,18 @@ class LogisticsSummary(BaseModel):
     )
 
 
+class ExamsSummary(BaseModel):
+    mine: list[SubmissionRead] = Field(description="Por corregir asignadas a mí, por plazo")
+    mine_count: int
+    unassigned_count: int = Field(description="Pendientes sin asignar")
+    to_notify_count: int = Field(description="Corregidas sin comunicar al alumno")
+    links_at_risk: list[SubmissionRead] = Field(
+        description="Enlaces sin guardar que caducan en 2 días o menos, o ya caducados"
+    )
+
+
 class HomeSummary(BaseModel):
     todos: TodoSummary
+    exams: ExamsSummary
     logistics: LogisticsSummary
     notes: list[NoteRead] = Field(description="Últimas notas editadas que puedo ver")

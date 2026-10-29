@@ -10,9 +10,12 @@ from app.modules.shipments.models import Shipment
 from app.modules.users.models import User
 from tests.conftest import auth_headers
 from tests.test_campuses import create_campus
+from tests.test_certifications import create_certification
 from tests.test_events import create_event, in_days
+from tests.test_exams import act, create_submission
 from tests.test_inventory import create_product, variant
 from tests.test_shipments import create_shipment, set_status
+from tests.test_students import create_student
 
 
 async def post(client: AsyncClient, user: User, path: str, **payload: Any) -> dict[str, Any]:
@@ -40,6 +43,13 @@ async def test_empty_summary(client: AsyncClient, worker: User) -> None:
             "company_pending": 0,
             "assigned_to_me": 0,
             "overdue": 0,
+        },
+        "exams": {
+            "mine": [],
+            "mine_count": 0,
+            "unassigned_count": 0,
+            "to_notify_count": 0,
+            "links_at_risk": [],
         },
         "logistics": {
             "upcoming_events": [],
@@ -190,3 +200,43 @@ async def test_low_stock_uses_available_units(
         ("S", -2, None),
         ("M", 4, 5),
     ]
+
+
+# --- Correcciones ---
+
+
+async def test_exams_summary(
+    client: AsyncClient, admin: User, worker: User, other_worker: User
+) -> None:
+    cert = await create_certification(client, admin)
+    student = await create_student(client, admin)
+    mine = {"assignee_id": str(worker.id)}
+
+    later = await create_submission(client, admin, student, cert, due_on=in_days(5), **mine)
+    sooner = await create_submission(client, admin, student, cert, due_on=in_days(1), **mine)
+    on_hold = await create_submission(client, admin, student, cert, due_on=in_days(3), **mine)
+    await act(client, admin, on_hold, "status", status="on_hold")
+    corrected = await create_submission(client, admin, student, cert, **mine)
+    await act(client, admin, corrected, "correct", outcome="passed")
+    await create_submission(client, admin, student, cert, assignee_id=str(other_worker.id))
+    await create_submission(client, admin, student, cert)  # sin asignar
+    # Enlaces: uno caduca mañana, otro ya caducado pero guardado, otro lejos.
+    risky = await create_submission(
+        client, admin, student, cert, link_url="https://we.tl/t-a", received_on=in_days(-6)
+    )
+    saved = await create_submission(
+        client, admin, student, cert, link_url="https://we.tl/t-b", received_on=in_days(-9)
+    )
+    await client.patch(
+        f"/api/exams/{saved['id']}",
+        json={"saved_url": "https://drive.google.com/x"},
+        headers=auth_headers(admin),
+    )
+    await create_submission(client, admin, student, cert, link_url="https://we.tl/t-c")
+
+    exams = (await summary(client, worker))["exams"]
+    assert [e["id"] for e in exams["mine"]] == [sooner["id"], on_hold["id"], later["id"]]
+    assert exams["mine_count"] == 3
+    assert exams["unassigned_count"] == 4  # la sin asignar + las 3 con enlace
+    assert exams["to_notify_count"] == 1
+    assert [e["id"] for e in exams["links_at_risk"]] == [risky["id"]]
