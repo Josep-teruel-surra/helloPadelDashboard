@@ -16,7 +16,7 @@ from app.modules.inventory.models import ProductCategory
 from app.modules.inventory.schemas import ProductCreate, VariantCreate
 from app.modules.notes.models import Note
 from app.modules.shipments import service as shipments_service
-from app.modules.shipments.models import ShipmentStatus
+from app.modules.shipments.models import Shipment, ShipmentStatus
 from app.modules.shipments.schemas import ItemIn, ShipmentCreate, StatusChange
 from app.modules.todos.models import Todo
 from app.modules.users.models import User, UserRole
@@ -149,12 +149,13 @@ async def seed(session: AsyncSession) -> bool:
     await product("Libro Nivel 2", ProductCategory.BOOK, ("Español", 20, 5), ("Inglés", 12, 5))
     bag = await product("Bolsa de tela Hello Padel", ProductCategory.OTHER, ("Única", 50, None))
 
-    async def shipment(*statuses: ShipmentStatus, **data: Any) -> None:
+    async def shipment(*statuses: ShipmentStatus, **data: Any) -> Shipment:
         created = await shipments_service.create_shipment(session, admin, ShipmentCreate(**data))
         for status in statuses:
             created = await shipments_service.change_status(
                 session, admin, created, StatusChange(status=status)
             )
+        return created
 
     # Ya entregado: libros para la federación austriaca.
     await shipment(
@@ -164,8 +165,8 @@ async def seed(session: AsyncSession) -> bool:
         items=[ItemIn(variant_id=book1["Alemán"], quantity=12)],
         carrier="Correos",
     )
-    # En camino a Zúrich para la formación.
-    await shipment(
+    # En camino a Zúrich desde hace 12 días: aparece en la home como «¿Ha llegado?».
+    to_zurich = await shipment(
         ShipmentStatus.SHIPPED,
         event_id=zurich_training.id,
         items=[
@@ -176,6 +177,8 @@ async def seed(session: AsyncSession) -> bool:
         carrier="DHL",
         tracking_number="JD014600006281",
     )
+    to_zurich.shipped_at = utcnow() - timedelta(days=12)
+    await session.commit()
     # Apartado para Copenhague (completa su tarea de material).
     await shipment(
         event_id=copenhagen_training.id,

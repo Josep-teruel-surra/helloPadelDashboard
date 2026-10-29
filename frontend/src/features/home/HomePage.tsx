@@ -1,34 +1,21 @@
-import { ArrowRight, Building2, NotebookPen, SquareCheckBig } from "lucide-react";
-import type { ReactNode } from "react";
-import { Link } from "react-router";
+import { Building2, NotebookPen, SquareCheckBig } from "lucide-react";
 
 import { useHomeSummary } from "@/api/queries";
 import type { Todo } from "@/api/types";
 import { useCurrentUser } from "@/auth/AuthContext";
 import { Badge, ErrorAlert } from "@/components/ui/Feedback";
-import { Card } from "@/components/ui/Layout";
+import { Card, SeeAll } from "@/components/ui/Layout";
 import { Spinner } from "@/components/ui/Spinner";
 import { NoteCard } from "@/features/notes/NotesPage";
 import { DueBadge, TodoCheckbox } from "@/features/todos/TodoItem";
 import { WeatherWidget } from "@/features/weather/WeatherWidget";
+import { LogisticsCard, UpcomingEventsCard } from "./LogisticsWidgets";
 
 function greeting(): string {
   const hour = new Date().getHours();
   if (hour < 6 || hour >= 21) return "Buenas noches";
   if (hour < 14) return "Buenos días";
   return "Buenas tardes";
-}
-
-function SeeAll({ to, children }: { to: string; children: ReactNode }) {
-  return (
-    <Link
-      to={to}
-      className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold whitespace-nowrap text-stone-500 hover:text-stone-900"
-    >
-      {children}
-      <ArrowRight className="size-3.5" aria-hidden />
-    </Link>
-  );
 }
 
 function CompactTodoList({ todos, empty }: { todos: Todo[]; empty: string }) {
@@ -124,6 +111,12 @@ export function HomePage() {
             <CompactTodoList todos={todos?.company ?? []} empty="El equipo está al día." />
           )}
         </Card>
+
+        <UpcomingEventsCard
+          className="md:col-span-2"
+          events={summary.data?.logistics.upcoming_events}
+        />
+        <LogisticsCard className="md:col-span-2 xl:col-span-1" logistics={summary.data?.logistics} />
 
         <Card
           className="md:col-span-2"

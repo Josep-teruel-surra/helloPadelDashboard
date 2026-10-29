@@ -1,4 +1,6 @@
+import { ArrowRight } from "lucide-react";
 import type { ReactNode } from "react";
+import { Link } from "react-router";
 
 import { cn } from "@/lib/cn";
 
@@ -93,3 +95,17 @@ export function Segmented<T extends string>({
     </div>
   );
 }
+
+/** Enlace "Ver todas →" para la cabecera de una tarjeta. */
+export function SeeAll({ to, children }: { to: string; children: ReactNode }) {
+  return (
+    <Link
+      to={to}
+      className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold whitespace-nowrap text-stone-500 hover:text-stone-900"
+    >
+      {children}
+      <ArrowRight className="size-3.5" aria-hidden />
+    </Link>
+  );
+}
+

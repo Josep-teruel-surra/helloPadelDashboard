@@ -2,10 +2,17 @@ from datetime import timedelta
 from typing import Any
 
 from httpx import AsyncClient
+from sqlalchemy import update
 
-from app.core.security import local_today
+from app.core.database import SessionLocal
+from app.core.security import local_today, utcnow
+from app.modules.shipments.models import Shipment
 from app.modules.users.models import User
 from tests.conftest import auth_headers
+from tests.test_campuses import create_campus
+from tests.test_events import create_event, in_days
+from tests.test_inventory import create_product, variant
+from tests.test_shipments import create_shipment, set_status
 
 
 async def post(client: AsyncClient, user: User, path: str, **payload: Any) -> dict[str, Any]:
@@ -33,6 +40,12 @@ async def test_empty_summary(client: AsyncClient, worker: User) -> None:
             "company_pending": 0,
             "assigned_to_me": 0,
             "overdue": 0,
+        },
+        "logistics": {
+            "upcoming_events": [],
+            "to_prepare": [],
+            "awaiting_delivery": [],
+            "low_stock": [],
         },
         "notes": [],
     }
@@ -94,3 +107,86 @@ async def test_latest_visible_notes(client: AsyncClient, worker: User, other_wor
     other_ids = [n["id"] for n in (await summary(client, other_worker))["notes"]]
     assert company["id"] in other_ids
     assert not set(other_ids) & {n["id"] for n in mine}
+
+
+# --- Logística ---
+
+
+async def test_upcoming_events_within_30_days(
+    client: AsyncClient, admin: User, worker: User
+) -> None:
+    campus = await create_campus(client, admin)
+    soon = await create_event(
+        client, admin, campus, title="Pronto", start_date=in_days(5), end_date=in_days(6)
+    )
+    ongoing = await create_event(
+        client, admin, campus, title="En curso", start_date=in_days(-1), end_date=in_days(1)
+    )
+    await create_event(
+        client, admin, campus, title="Lejos", start_date=in_days(45), end_date=in_days(46)
+    )
+    cancelled = await create_event(
+        client, admin, campus, title="Cancelado", start_date=in_days(3), end_date=in_days(3)
+    )
+    await client.patch(
+        f"/api/events/{cancelled['id']}", json={"status": "cancelled"}, headers=auth_headers(admin)
+    )
+
+    events = (await summary(client, worker))["logistics"]["upcoming_events"]
+    assert [e["id"] for e in events] == [ongoing["id"], soon["id"]]
+    assert events[1]["material_task"]["is_done"] is False
+
+
+async def test_shipments_to_prepare_and_awaiting_delivery(
+    client: AsyncClient, admin: User, worker: User, other_worker: User
+) -> None:
+    campus = await create_campus(client, admin)
+    shirt = await create_product(client, admin)
+    item = [{"variant_id": variant(shirt, "S")["id"], "quantity": 1}]
+
+    mine = await create_shipment(
+        client, admin, campus_id=campus["id"], items=item, assignee_id=str(worker.id)
+    )
+    await create_shipment(
+        client, admin, campus_id=campus["id"], items=item, assignee_id=str(other_worker.id)
+    )
+    old = await create_shipment(client, admin, campus_id=campus["id"], items=item)
+    recent = await create_shipment(client, admin, campus_id=campus["id"], items=item)
+    for shipment in (old, recent):
+        await set_status(client, admin, shipment, "shipped")
+    async with SessionLocal() as session:
+        await session.execute(
+            update(Shipment)
+            .where(Shipment.id == old["id"])
+            .values(shipped_at=utcnow() - timedelta(days=12))
+        )
+        await session.commit()
+
+    logistics = (await summary(client, worker))["logistics"]
+    assert [s["id"] for s in logistics["to_prepare"]] == [mine["id"]]
+    assert [s["id"] for s in logistics["awaiting_delivery"]] == [old["id"]]
+
+
+async def test_low_stock_uses_available_units(
+    client: AsyncClient, admin: User, worker: User
+) -> None:
+
+    # S=10 (sin umbral), M=25 (umbral 5), L=0 (sin umbral)
+    shirt = await create_product(client, admin)
+    assert (await summary(client, worker))["logistics"]["low_stock"] == []
+
+    campus = await create_campus(client, admin)
+    await create_shipment(
+        client,
+        admin,
+        campus_id=campus["id"],
+        items=[
+            {"variant_id": variant(shirt, "M")["id"], "quantity": 21},  # quedan 4 disponibles
+            {"variant_id": variant(shirt, "S")["id"], "quantity": 12},  # faltan 2
+        ],
+    )
+    low = (await summary(client, worker))["logistics"]["low_stock"]
+    assert [(i["label"], i["available"], i["low_stock_threshold"]) for i in low] == [
+        ("S", -2, None),
+        ("M", 4, 5),
+    ]

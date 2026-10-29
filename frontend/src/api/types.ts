@@ -53,7 +53,22 @@ export interface Note {
   can_edit: boolean;
 }
 
+export interface LowStockItem {
+  product_id: string;
+  product_name: string;
+  variant_id: string;
+  label: string;
+  available: number;
+  low_stock_threshold: number | null;
+}
+
 export interface HomeSummary {
+  logistics: {
+    upcoming_events: AcademyEvent[];
+    to_prepare: Shipment[];
+    awaiting_delivery: Shipment[];
+    low_stock: LowStockItem[];
+  };
   todos: {
     personal: Todo[];
     company: Todo[];
