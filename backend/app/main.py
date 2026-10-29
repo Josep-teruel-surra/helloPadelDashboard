@@ -6,6 +6,7 @@ from app.modules.auth.router import router as auth_router
 from app.modules.notes.router import router as notes_router
 from app.modules.todos.router import router as todos_router
 from app.modules.users.router import router as users_router
+from app.modules.weather.router import router as weather_router
 
 
 def create_app() -> FastAPI:
@@ -35,6 +36,7 @@ def create_app() -> FastAPI:
     api.include_router(users_router)
     api.include_router(todos_router)
     api.include_router(notes_router)
+    api.include_router(weather_router)
     app.include_router(api)
     return app
 

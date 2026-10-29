@@ -61,7 +61,8 @@ backend/app/
 │   ├── auth/
 │   ├── users/
 │   ├── todos/
-│   └── notes/
+│   ├── notes/
+│   └── weather/
 ├── models.py   # registro de modelos para Alembic
 ├── cli.py      # comandos de gestión
 └── main.py
@@ -72,6 +73,10 @@ backend/app/
 - Lo **personal** (to-dos, notas) solo lo ve y lo modifica su dueño, admin incluido. A los demás les devuelve 404.
 - **To-dos de empresa:** todos los ven y pueden marcarlos como hechos. Editar o borrar: creador, persona asignada o admin.
 - **Notas de empresa:** todos las leen. Editar o borrar: el autor o un admin. El contenido es markdown y el ámbito de una nota no se puede cambiar.
+
+## Tiempo
+
+`GET /api/weather?lat=&lon=` (sin coordenadas usa Barcelona) consulta Open-Meteo, sin API key, desde el backend. La respuesta se guarda en caché 15 min por coordenadas redondeadas a ~1 km (`WEATHER_CACHE_TTL_SECONDS`). Si Open-Meteo falla, sirve el último dato guardado marcado con `stale: true`. La caché vive en memoria: si se despliegan varias réplicas, habrá que cambiarla por Redis (`app/core/cache.py`).
 
 ## Autenticación
 

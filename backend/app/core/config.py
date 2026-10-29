@@ -26,6 +26,13 @@ class Settings(BaseSettings):
     # Orígenes separados por comas; vacío desactiva CORS.
     cors_origins: str = ""
 
+    # Tiempo (Open-Meteo, sin API key). Ubicación por defecto: Barcelona.
+    open_meteo_url: str = "https://api.open-meteo.com/v1/forecast"
+    weather_cache_ttl_seconds: int = 15 * 60
+    weather_default_name: str = "Barcelona"
+    weather_default_latitude: float = 41.3874
+    weather_default_longitude: float = 2.1686
+
     @property
     def cors_origin_list(self) -> list[str]:
         return [origin.strip() for origin in self.cors_origins.split(",") if origin.strip()]
