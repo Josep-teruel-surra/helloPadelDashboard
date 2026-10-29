@@ -41,7 +41,7 @@ export function LoginPage() {
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center text-2xl text-white">
           <Logo />
-          <p className="mt-2 text-sm font-medium text-stone-400">Dashboard del equipo</p>
+          <p className="mt-2 text-sm font-medium text-stone-400">Academy · Equipo internacional</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl bg-white p-6 shadow-xl">

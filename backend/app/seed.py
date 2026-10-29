@@ -36,75 +36,101 @@ async def seed(session: AsyncSession) -> bool:
     today = local_today()
     session.add_all(
         [
+            # Empresa
             Todo(
                 scope=Scope.COMPANY,
-                title="Pedir 20 botes de pelotas",
+                title="Enviar 40 camisetas y 15 libros al campus de Dinamarca",
+                description="Confirmar tallas con el coordinador antes de preparar la caja.",
                 created_by_id=admin.id,
                 assignee_id=bruno.id,
                 due_date=today + timedelta(days=2),
-                description="Proveedor habitual. Confirmar precio antes de pedir.",
             ),
             Todo(
                 scope=Scope.COMPANY,
-                title="Revisar la red de la pista 3",
-                created_by_id=bruno.id,
+                title="Corregir exámenes tipo test de la convocatoria de noviembre",
+                description="Llegan por el examportal.",
+                created_by_id=admin.id,
                 assignee_id=ana.id,
                 due_date=today,
             ),
             Todo(
                 scope=Scope.COMPANY,
-                title="Publicar el cartel del torneo de diciembre",
-                created_by_id=ana.id,
+                title="Revisar los vídeos de examen recibidos por WeTransfer (Países Bajos)",
+                description="El enlace de WeTransfer caduca en 7 días: descargarlos antes.",
+                created_by_id=bruno.id,
+                assignee_id=ana.id,
                 due_date=today - timedelta(days=1),
             ),
             Todo(
                 scope=Scope.COMPANY,
-                title="Cambiar los grips de las palas de alquiler",
+                title="Responder tickets de soporte de la plataforma online",
+                created_by_id=ana.id,
+            ),
+            Todo(
+                scope=Scope.COMPANY,
+                title="Campus Calella: confirmar alojamiento del grupo de Alemania",
+                created_by_id=admin.id,
+                assignee_id=bruno.id,
+                due_date=today + timedelta(days=6),
+            ),
+            Todo(
+                scope=Scope.COMPANY,
+                title="Enviar libros a la federación de Austria",
                 created_by_id=admin.id,
                 is_done=True,
                 completed_at=utcnow(),
             ),
+            # Personales
             Todo(
                 scope=Scope.PERSONAL,
-                title="Preparar la clase de iniciación del jueves",
+                title="Reservar vuelos para el viaje de coach a Zúrich",
                 created_by_id=ana.id,
                 due_date=today + timedelta(days=3),
             ),
-            Todo(scope=Scope.PERSONAL, title="Llamar al fisio", created_by_id=ana.id),
             Todo(
                 scope=Scope.PERSONAL,
-                title="Revisar facturas de octubre",
+                title="Preparar el material de la formación de Dinamarca",
+                created_by_id=ana.id,
+            ),
+            Todo(
+                scope=Scope.PERSONAL,
+                title="Revisar presupuesto de envíos internacionales",
                 created_by_id=admin.id,
                 due_date=today + timedelta(days=5),
             ),
             Note(
                 scope=Scope.COMPANY,
-                title="Horario de invierno",
+                title="Checklist de envío de material a campus",
                 author_id=admin.id,
                 content_md=(
-                    "## Apertura\n\n| Día | Horario |\n|---|---|\n"
-                    "| Lunes a viernes | 8:00 – 23:00 |\n| Sábados | 9:00 – 21:00 |\n"
-                    "| Domingos | 9:00 – 14:00 |\n\n"
-                    "Las pistas exteriores cierran a las **20:00** de noviembre a febrero."
+                    "## Antes de enviar\n\n"
+                    "- [ ] Confirmar cantidades y tallas con el coordinador del campus\n"
+                    "- [ ] Factura proforma para envíos fuera de la UE\n"
+                    "- [ ] Dirección completa y teléfono de contacto\n\n"
+                    "## Después\n\n"
+                    "| Paso | Quién |\n|---|---|\n"
+                    "| Compartir número de seguimiento | Quien envía |\n"
+                    "| Confirmar recepción | Coordinador del campus |"
                 ),
             ),
             Note(
                 scope=Scope.COMPANY,
-                title="Protocolo de lluvia",
+                title="Cómo corregimos los exámenes",
                 author_id=bruno.id,
                 content_md=(
-                    "Si llueve:\n\n1. Avisar por WhatsApp a las reservas de pistas exteriores.\n"
-                    "2. Ofrecer cambio a pista cubierta si hay hueco.\n"
-                    "3. Si no, **reembolso completo**.\n\n- [x] Plantilla de mensaje\n"
-                    "- [ ] Lista de contactos actualizada"
+                    "1. **Tipo test**: llegan por el examportal.\n"
+                    "2. **Vídeos**: por el examportal o por **WeTransfer**. Descargar en cuanto "
+                    "lleguen, porque los enlaces caducan.\n"
+                    "3. Registrar la nota y avisar al alumno."
                 ),
             ),
             Note(
                 scope=Scope.PERSONAL,
-                title="Ideas para clinics",
+                title="Ideas para el viaje a Zúrich",
                 author_id=ana.id,
                 content_md=(
-                    "- Clinic de volea para nivel medio\n- Bandeja y víbora\n- Salida de pared"
+                    "- Llevar libros de nivel 1 para vender allí\n"
+                    "- Proponer fecha para el próximo campus"
                 ),
             ),
         ]

@@ -8,7 +8,7 @@ from tests.conftest import MakeUser, auth_headers
 
 
 async def create_todo(client: AsyncClient, user: User, **payload: Any) -> dict[str, Any]:
-    payload.setdefault("title", "Revisar redes de las pistas")
+    payload.setdefault("title", "Enviar libros al campus de Austria")
     resp = await client.post("/api/todos", json=payload, headers=auth_headers(user))
     assert resp.status_code == 201, resp.text
     return resp.json()
@@ -127,7 +127,11 @@ async def test_company_todo_is_visible_to_everyone(
     client: AsyncClient, admin: User, worker: User, other_worker: User
 ) -> None:
     todo = await create_todo(
-        client, worker, scope="company", title="Pedir pelotas", assignee_id=str(other_worker.id)
+        client,
+        worker,
+        scope="company",
+        title="Reservar vuelos a Zúrich",
+        assignee_id=str(other_worker.id),
     )
     assert todo["assignee"]["id"] == str(other_worker.id)
 

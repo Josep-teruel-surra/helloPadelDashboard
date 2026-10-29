@@ -84,7 +84,7 @@ function TodoForm({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           className={inputClass}
-          placeholder="Ej.: Revisar redes de la pista 3"
+          placeholder="Ej.: Enviar camisetas al campus de Dinamarca"
         />
       </Field>
 

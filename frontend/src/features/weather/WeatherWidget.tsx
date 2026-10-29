@@ -52,13 +52,12 @@ const hourLabel = (time: string) => time.slice(11, 16);
 const weekday = (isoDate: string) =>
   parseLocalDate(isoDate).toLocaleDateString("es-ES", { weekday: "short" }).replace(".", "");
 
-/** Avisos útiles para decidir sobre las pistas exteriores. */
-function courtWarnings(weather: Weather): string[] {
+/** Avisos breves de lluvia y viento para las próximas horas. */
+function weatherWarnings(weather: Weather): string[] {
   const warnings: string[] = [];
   const nextHours = weather.hourly.slice(1, 4);
-  if (["rain", "drizzle", "storm", "snow"].includes(weather.current.icon)) {
-    warnings.push("Está lloviendo: revisa las reservas de pistas exteriores.");
-  } else if (nextHours.some((h) => (h.precipitation_probability ?? 0) >= 50)) {
+  const rainingNow = ["rain", "drizzle", "storm", "snow"].includes(weather.current.icon);
+  if (!rainingNow && nextHours.some((h) => (h.precipitation_probability ?? 0) >= 50)) {
     warnings.push("Probable lluvia en las próximas 3 horas.");
   }
   if ((weather.current.wind_gusts ?? 0) >= 40) {
@@ -107,7 +106,7 @@ export function WeatherWidget({ className }: { className?: string }) {
 
 function WeatherDetails({ weather }: { weather: Weather }) {
   const { current } = weather;
-  const warnings = courtWarnings(weather);
+  const warnings = weatherWarnings(weather);
 
   return (
     <div className="space-y-4">
