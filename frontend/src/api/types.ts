@@ -285,3 +285,63 @@ export interface SentMaterialRow {
   label: string;
   quantity: number;
 }
+
+// --- Correcciones de exámenes ---
+
+export interface StudentSummary {
+  id: string;
+  full_name: string;
+  email: string;
+  country_code: string | null;
+}
+
+export interface Student extends StudentSummary {
+  campus: CampusSummary | null;
+  notes_md: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Certification {
+  id: string;
+  name: string;
+  has_test: boolean;
+  has_video: boolean;
+  position: number;
+  is_active: boolean;
+}
+
+export type ExamKind = "test" | "video";
+export type ExamSource = "examportal" | "wetransfer" | "email" | "other";
+export type ExamStatus = "received" | "in_review" | "on_hold" | "corrected" | "notified" | "cancelled";
+export type ExamOutcome = "passed" | "failed" | "resubmit";
+export type LinkStatus = "ok" | "expiring" | "expired" | "saved";
+
+export interface ExamSubmission {
+  id: string;
+  student: StudentSummary;
+  certification: { id: string; name: string };
+  kind: ExamKind;
+  source: ExamSource;
+  link_url: string | null;
+  link_expires_on: string | null;
+  saved_url: string | null;
+  saved_at: string | null;
+  received_on: string;
+  due_on: string;
+  status: ExamStatus;
+  assignee: UserSummary | null;
+  outcome: ExamOutcome | null;
+  score: string | null;
+  feedback_md: string;
+  corrected_by: UserSummary | null;
+  corrected_at: string | null;
+  notified_at: string | null;
+  created_by: UserSummary;
+  created_at: string;
+  updated_at: string;
+  attempt: number;
+  days_left: number | null;
+  link_status: LinkStatus | null;
+  can_delete: boolean;
+}

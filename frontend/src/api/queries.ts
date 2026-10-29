@@ -2,11 +2,14 @@ import { useQuery } from "@tanstack/react-query";
 
 import {
   campusesApi,
+  certificationsApi,
   eventsApi,
+  examsApi,
   homeApi,
   inventoryApi,
   notesApi,
   shipmentsApi,
+  studentsApi,
   todosApi,
   usersApi,
   weatherApi,
@@ -14,6 +17,7 @@ import {
 import type {
   Coordinates,
   EventFilters,
+  ExamFilters,
   NoteFilters,
   ShipmentFilters,
   TodoFilters,
@@ -36,6 +40,11 @@ export const queryKeys = {
   shipments: (filters: ShipmentFilters = {}) => ["shipments", filters] as const,
   shipment: (id: string) => ["shipments", "detail", id] as const,
   sentMaterial: (filters: object = {}) => ["shipments", "sent-material", filters] as const,
+  students: (filters: object = {}) => ["students", filters] as const,
+  student: (id: string) => ["students", "detail", id] as const,
+  certifications: (includeInactive = false) => ["certifications", { includeInactive }] as const,
+  exams: (filters: ExamFilters = {}) => ["exams", filters] as const,
+  exam: (id: string) => ["exams", "detail", id] as const,
 };
 
 export function useUsers(includeInactive = false) {
@@ -119,3 +128,31 @@ export function useSentMaterial(filters: { campus_id?: string; year?: number }) 
 
 /** Tras tocar envíos o stock: refresca todo lo que depende de ellos. */
 export const LOGISTICS_KEYS = [["shipments"], ["products"], ["events"], ["todos"], ["home"]] as const;
+
+export function useStudents(filters: { q?: string; campus_id?: string; limit?: number } = {}) {
+  return useQuery({ queryKey: queryKeys.students(filters), queryFn: () => studentsApi.list(filters) });
+}
+
+export function useStudent(id: string) {
+  return useQuery({ queryKey: queryKeys.student(id), queryFn: () => studentsApi.get(id) });
+}
+
+export function useCertifications(includeInactive = false) {
+  return useQuery({
+    queryKey: queryKeys.certifications(includeInactive),
+    queryFn: () => certificationsApi.list(includeInactive),
+    staleTime: 5 * 60_000,
+  });
+}
+
+export function useExams(filters: ExamFilters = {}, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.exams(filters),
+    queryFn: () => examsApi.list(filters),
+    enabled,
+  });
+}
+
+export function useExam(id: string) {
+  return useQuery({ queryKey: queryKeys.exam(id), queryFn: () => examsApi.get(id) });
+}

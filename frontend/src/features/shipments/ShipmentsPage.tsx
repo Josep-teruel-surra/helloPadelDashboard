@@ -5,11 +5,10 @@ import { useCampuses, useShipments } from "@/api/queries";
 import type { ShipmentStatus } from "@/api/types";
 import { Button } from "@/components/ui/Button";
 import { EmptyState, ErrorAlert } from "@/components/ui/Feedback";
-import { inputClass } from "@/components/ui/Field";
+import { inlineSelectClass } from "@/components/ui/Field";
 import { Card, PageHeader, Segmented } from "@/components/ui/Layout";
 import { Modal } from "@/components/ui/Modal";
 import { Spinner } from "@/components/ui/Spinner";
-import { cn } from "@/lib/cn";
 import { SHIPMENT_STATUS } from "@/lib/labels";
 import { SentMaterialTable } from "./SentMaterialTable";
 import { NewShipmentForm } from "./ShipmentForms";
@@ -54,7 +53,7 @@ export function ShipmentsPage() {
               aria-label="Estado"
               value={status}
               onChange={(e) => setStatus(e.target.value as ShipmentStatus | "")}
-              className={cn(inputClass, "w-auto")}
+              className={inlineSelectClass}
             >
               <option value="">Todos los estados</option>
               {Object.entries(SHIPMENT_STATUS).map(([value, { label }]) => (
@@ -67,7 +66,7 @@ export function ShipmentsPage() {
               aria-label="Campus"
               value={campusId}
               onChange={(e) => setCampusId(e.target.value)}
-              className={cn(inputClass, "w-auto")}
+              className={inlineSelectClass}
             >
               <option value="">Todos los campus</option>
               {campuses.data?.map((c) => (

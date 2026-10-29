@@ -4,9 +4,8 @@ import { useSentMaterial } from "@/api/queries";
 import type { SentMaterialRow } from "@/api/types";
 import { CountryFlag } from "@/components/ui/Country";
 import { ErrorAlert } from "@/components/ui/Feedback";
-import { inputClass } from "@/components/ui/Field";
+import { inlineSelectClass } from "@/components/ui/Field";
 import { Spinner } from "@/components/ui/Spinner";
-import { cn } from "@/lib/cn";
 
 const CURRENT_YEAR = new Date().getFullYear();
 const YEARS = [CURRENT_YEAR, CURRENT_YEAR - 1, CURRENT_YEAR - 2];
@@ -46,7 +45,7 @@ export function SentMaterialTable({ campusId }: { campusId?: string }) {
         aria-label="Año"
         value={year}
         onChange={(e) => setYear(e.target.value ? Number(e.target.value) : "")}
-        className={cn(inputClass, "w-auto")}
+        className={inlineSelectClass}
       >
         <option value="">Desde siempre</option>
         {YEARS.map((y) => (

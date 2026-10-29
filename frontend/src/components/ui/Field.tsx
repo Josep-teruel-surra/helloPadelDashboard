@@ -8,6 +8,9 @@ export const inputClass = cn(
   "disabled:bg-stone-100 disabled:text-stone-500",
 );
 
+/** Para selects de filtro en una fila: mismo estilo, pero solo el ancho de su contenido. */
+export const inlineSelectClass = inputClass.replace("w-full", "w-auto max-w-full");
+
 interface FieldProps {
   label: string;
   htmlFor: string;

@@ -1,6 +1,10 @@
 import type {
   EventKind,
   EventStatus,
+  ExamKind,
+  ExamOutcome,
+  ExamSource,
+  ExamStatus,
   MovementKind,
   ProductCategory,
   ShipmentStatus,
@@ -41,6 +45,30 @@ export const MOVEMENT_KIND_LABELS: Record<MovementKind, string> = {
   shipment: "Envío",
   adjustment: "Ajuste",
   return: "Devolución",
+};
+
+export const EXAM_KIND_LABELS: Record<ExamKind, string> = { test: "Test", video: "Vídeo" };
+
+export const EXAM_SOURCE_LABELS: Record<ExamSource, string> = {
+  examportal: "Examportal",
+  wetransfer: "WeTransfer",
+  email: "Email",
+  other: "Otro",
+};
+
+export const EXAM_STATUS: Record<ExamStatus, { label: string; tone: Tone }> = {
+  received: { label: "Pendiente", tone: "amber" },
+  in_review: { label: "En corrección", tone: "blue" },
+  on_hold: { label: "En espera", tone: "neutral" },
+  corrected: { label: "Corregida", tone: "green" },
+  notified: { label: "Comunicada", tone: "neutral" },
+  cancelled: { label: "Cancelada", tone: "neutral" },
+};
+
+export const EXAM_OUTCOME: Record<ExamOutcome, { label: string; tone: Tone }> = {
+  passed: { label: "Apto", tone: "green" },
+  failed: { label: "No apto", tone: "red" },
+  resubmit: { label: "Repetir", tone: "amber" },
 };
 
 export function options<T extends string>(labels: Record<T, string | { label: string }>) {

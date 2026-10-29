@@ -3,8 +3,14 @@ import type {
   AcademyEvent,
   Address,
   Campus,
+  Certification,
   EventKind,
   EventStatus,
+  ExamKind,
+  ExamOutcome,
+  ExamSource,
+  ExamStatus,
+  ExamSubmission,
   HomeSummary,
   MovementKind,
   Note,
@@ -16,6 +22,7 @@ import type {
   Shipment,
   ShipmentStatus,
   StockMovement,
+  Student,
   Todo,
   TokenResponse,
   User,
@@ -266,4 +273,82 @@ export const shipmentsApi = {
   remove: (id: string) => api<void>(`/shipments/${id}`, { method: "DELETE" }),
   sentMaterial: (filters: { campus_id?: string; year?: number } = {}) =>
     api<SentMaterialRow[]>("/shipments/sent-material", { query: { ...filters } }),
+};
+
+// --- Correcciones de exámenes ---
+
+export interface StudentInput {
+  full_name: string;
+  email: string;
+  country_code: string | null;
+  campus_id: string | null;
+  notes_md?: string;
+}
+
+export const studentsApi = {
+  list: (filters: { q?: string; campus_id?: string; limit?: number } = {}) =>
+    api<Student[]>("/students", { query: { ...filters } }),
+  get: (id: string) => api<Student>(`/students/${id}`),
+  create: (data: StudentInput) => api<Student>("/students", { method: "POST", body: data }),
+  update: (id: string, data: Partial<StudentInput>) =>
+    api<Student>(`/students/${id}`, { method: "PATCH", body: data }),
+  remove: (id: string) => api<void>(`/students/${id}`, { method: "DELETE" }),
+};
+
+export interface CertificationInput {
+  name: string;
+  has_test: boolean;
+  has_video: boolean;
+  position?: number;
+  is_active?: boolean;
+}
+
+export const certificationsApi = {
+  list: (includeInactive = false) =>
+    api<Certification[]>("/certifications", { query: { include_inactive: includeInactive } }),
+  create: (data: CertificationInput) =>
+    api<Certification>("/certifications", { method: "POST", body: data }),
+  update: (id: string, data: Partial<CertificationInput>) =>
+    api<Certification>(`/certifications/${id}`, { method: "PATCH", body: data }),
+  remove: (id: string) => api<void>(`/certifications/${id}`, { method: "DELETE" }),
+};
+
+export interface ExamFilters {
+  status?: ExamStatus;
+  open_only?: boolean;
+  kind?: ExamKind;
+  source?: ExamSource;
+  assigned_to_me?: boolean;
+  student_id?: string;
+  certification_id?: string;
+  limit?: number;
+}
+
+export interface SubmissionInput {
+  student_id: string;
+  certification_id: string;
+  kind: ExamKind;
+  source?: ExamSource | null;
+  link_url?: string | null;
+  link_expires_on?: string | null;
+  received_on?: string | null;
+  due_on?: string | null;
+  assignee_id?: string | null;
+}
+
+export type SubmissionUpdate = Partial<
+  Omit<SubmissionInput, "student_id" | "certification_id" | "kind"> & { saved_url: string | null }
+>;
+
+export const examsApi = {
+  list: (filters: ExamFilters = {}) => api<ExamSubmission[]>("/exams", { query: { ...filters } }),
+  get: (id: string) => api<ExamSubmission>(`/exams/${id}`),
+  create: (data: SubmissionInput) => api<ExamSubmission>("/exams", { method: "POST", body: data }),
+  update: (id: string, data: SubmissionUpdate) =>
+    api<ExamSubmission>(`/exams/${id}`, { method: "PATCH", body: data }),
+  correct: (id: string, data: { outcome: ExamOutcome; score: string | null; feedback_md: string }) =>
+    api<ExamSubmission>(`/exams/${id}/correct`, { method: "POST", body: data }),
+  changeStatus: (id: string, status: Exclude<ExamStatus, "corrected">) =>
+    api<ExamSubmission>(`/exams/${id}/status`, { method: "POST", body: { status } }),
+  remove: (id: string) => api<void>(`/exams/${id}`, { method: "DELETE" }),
 };

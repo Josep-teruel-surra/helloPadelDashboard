@@ -5,10 +5,9 @@ import type { EventWhen } from "@/api/endpoints";
 import { useCampuses, useEvents } from "@/api/queries";
 import { Button } from "@/components/ui/Button";
 import { EmptyState, ErrorAlert } from "@/components/ui/Feedback";
-import { inputClass } from "@/components/ui/Field";
+import { inlineSelectClass } from "@/components/ui/Field";
 import { PageHeader, Segmented } from "@/components/ui/Layout";
 import { Spinner } from "@/components/ui/Spinner";
-import { cn } from "@/lib/cn";
 import { EventFormModal } from "./EventFormModal";
 import { EventRow } from "./EventRow";
 
@@ -46,7 +45,7 @@ export function EventsPage() {
           aria-label="Campus"
           value={campusId}
           onChange={(e) => setCampusId(e.target.value)}
-          className={cn(inputClass, "w-auto")}
+          className={inlineSelectClass}
         >
           <option value="">Todos los campus</option>
           {campuses.data?.map((c) => (

@@ -1,4 +1,14 @@
-import { CalendarDays, House, MapPin, NotebookPen, Package, SquareCheckBig, Truck, Users } from "lucide-react";
+import {
+  CalendarDays,
+  ClipboardCheck,
+  House,
+  MapPin,
+  NotebookPen,
+  Package,
+  SquareCheckBig,
+  Truck,
+  Users,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export interface NavItem {
@@ -11,6 +21,7 @@ export interface NavItem {
 // Añade aquí cada sección nueva (inventario, reuniones, calendario, redes…).
 export const NAV_ITEMS: NavItem[] = [
   { to: "/", label: "Inicio", icon: House },
+  { to: "/correcciones", label: "Correcciones", icon: ClipboardCheck },
   { to: "/eventos", label: "Eventos", icon: CalendarDays },
   { to: "/envios", label: "Envíos", icon: Truck },
   { to: "/material", label: "Material", icon: Package },

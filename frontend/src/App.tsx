@@ -8,6 +8,9 @@ import { CampusDetailPage } from "@/features/campuses/CampusDetailPage";
 import { CampusesPage } from "@/features/campuses/CampusesPage";
 import { EventDetailPage } from "@/features/events/EventDetailPage";
 import { EventsPage } from "@/features/events/EventsPage";
+import { ExamDetailPage } from "@/features/exams/ExamDetailPage";
+import { ExamsPage } from "@/features/exams/ExamsPage";
+import { StudentDetailPage } from "@/features/exams/StudentDetailPage";
 import { HomePage } from "@/features/home/HomePage";
 import { LoginPage } from "@/features/login/LoginPage";
 import { NoteDetailPage } from "@/features/notes/NoteDetailPage";
@@ -44,6 +47,9 @@ const router = createBrowserRouter([
           { path: "notas", element: <NotesPage /> },
           { path: "notas/nueva", element: <NoteNewPage /> },
           { path: "notas/:noteId", element: <NoteDetailPage /> },
+          { path: "correcciones", element: <ExamsPage /> },
+          { path: "correcciones/:examId", element: <ExamDetailPage /> },
+          { path: "alumnos/:studentId", element: <StudentDetailPage /> },
           { path: "eventos", element: <EventsPage /> },
           { path: "eventos/:eventId", element: <EventDetailPage /> },
           { path: "envios", element: <ShipmentsPage /> },
