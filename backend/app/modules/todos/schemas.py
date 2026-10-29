@@ -4,6 +4,7 @@ from typing import Annotated, Self
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
+from app.modules.events.schemas import EventRef
 from app.modules.users.schemas import UserSummary
 from app.shared.enums import Scope
 
@@ -17,6 +18,7 @@ class TodoCreate(BaseModel):
     description: Description | None = None
     due_date: date | None = None
     assignee_id: uuid.UUID | None = None
+    event_id: uuid.UUID | None = None
 
     @model_validator(mode="after")
     def _personal_cannot_be_assigned(self) -> Self:
@@ -32,6 +34,7 @@ class TodoUpdate(BaseModel):
     description: Description | None = None
     due_date: date | None = None
     assignee_id: uuid.UUID | None = None
+    event_id: uuid.UUID | None = None
     is_done: bool | None = None
 
     @model_validator(mode="after")
@@ -54,6 +57,7 @@ class TodoRead(BaseModel):
     due_date: date | None
     created_by: UserSummary
     assignee: UserSummary | None
+    event: EventRef | None
     created_at: datetime
     updated_at: datetime
     can_edit: bool = Field(

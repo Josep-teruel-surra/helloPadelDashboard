@@ -19,9 +19,12 @@ async def list_notes(
     q: Annotated[
         str | None, Query(max_length=100, description="Busca en título y contenido")
     ] = None,
+    event_id: uuid.UUID | None = None,
     limit: Annotated[int, Query(ge=1, le=500)] = 100,
 ) -> list[NoteRead]:
-    notes = await service.list_notes(session, user, scope=scope, q=q, limit=limit)
+    notes = await service.list_notes(
+        session, user, scope=scope, q=q, event_id=event_id, limit=limit
+    )
     return [service.to_read(note, user) for note in notes]
 
 

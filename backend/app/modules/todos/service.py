@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import BadRequestError, ForbiddenError, NotFoundError
 from app.core.security import utcnow
+from app.modules.events.models import Event
 from app.modules.todos.models import Todo
 from app.modules.todos.schemas import TodoCreate, TodoRead, TodoUpdate
 from app.modules.users.models import User
@@ -32,6 +33,7 @@ async def list_todos(
     scope: Scope | None = None,
     is_done: bool | None = None,
     assigned_to_me: bool = False,
+    event_id: uuid.UUID | None = None,
     limit: int = 200,
 ) -> list[Todo]:
     query = select(Todo).where(visible_to(Todo.scope, Todo.created_by_id, user))
@@ -39,6 +41,8 @@ async def list_todos(
         query = query.where(Todo.scope == scope)
     if is_done is not None:
         query = query.where(Todo.is_done.is_(is_done))
+    if event_id is not None:
+        query = query.where(Todo.event_id == event_id)
     if assigned_to_me:
         query = query.where(Todo.assignee_id == user.id)
     query = query.order_by(
@@ -55,19 +59,31 @@ async def get_visible(session: AsyncSession, user: User, todo_id: uuid.UUID) -> 
     return todo
 
 
-async def _check_assignee(session: AsyncSession, assignee_id: uuid.UUID) -> None:
+async def check_assignee(
+    session: AsyncSession,
+    assignee_id: uuid.UUID,
+    *,
+    message: str = "La persona asignada no existe o está inactiva",
+) -> None:
     assignee = await session.get(User, assignee_id)
     if assignee is None or not assignee.is_active:
-        raise BadRequestError("La persona asignada no existe o está inactiva")
+        raise BadRequestError(message)
+
+
+async def check_event(session: AsyncSession, event_id: uuid.UUID) -> None:
+    if await session.get(Event, event_id) is None:
+        raise BadRequestError("El evento no existe")
 
 
 async def create_todo(session: AsyncSession, user: User, data: TodoCreate) -> Todo:
     if data.assignee_id is not None:
-        await _check_assignee(session, data.assignee_id)
+        await check_assignee(session, data.assignee_id)
+    if data.event_id is not None:
+        await check_event(session, data.event_id)
     todo = Todo(**data.model_dump(), created_by_id=user.id)
     session.add(todo)
     await session.commit()
-    await session.refresh(todo, ["created_by", "assignee"])
+    await session.refresh(todo, ["created_by", "assignee", "event"])
     return todo
 
 
@@ -82,7 +98,10 @@ async def update_todo(session: AsyncSession, user: User, todo: Todo, data: TodoU
         if changes["assignee_id"] is not None:
             if todo.scope == Scope.PERSONAL:
                 raise BadRequestError("Las tareas personales no se pueden asignar")
-            await _check_assignee(session, changes["assignee_id"])
+            await check_assignee(session, changes["assignee_id"])
+
+    if changes.get("event_id") is not None:
+        await check_event(session, changes["event_id"])
 
     if "is_done" in changes and changes["is_done"] != todo.is_done:
         todo.completed_at = utcnow() if changes["is_done"] else None
@@ -91,7 +110,7 @@ async def update_todo(session: AsyncSession, user: User, todo: Todo, data: TodoU
         setattr(todo, field, value)
 
     await session.commit()
-    await session.refresh(todo, ["created_by", "assignee"])
+    await session.refresh(todo, ["created_by", "assignee", "event"])
     return todo
 
 

@@ -18,10 +18,17 @@ async def list_todos(
     scope: Scope | None = None,
     is_done: bool | None = None,
     assigned_to_me: bool = False,
+    event_id: uuid.UUID | None = None,
     limit: Annotated[int, Query(ge=1, le=500)] = 200,
 ) -> list[TodoRead]:
     todos = await service.list_todos(
-        session, user, scope=scope, is_done=is_done, assigned_to_me=assigned_to_me, limit=limit
+        session,
+        user,
+        scope=scope,
+        is_done=is_done,
+        assigned_to_me=assigned_to_me,
+        event_id=event_id,
+        limit=limit,
     )
     return [service.to_read(todo, user) for todo in todos]
 

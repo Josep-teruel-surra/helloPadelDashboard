@@ -4,6 +4,7 @@ from typing import Annotated, Self
 
 from pydantic import BaseModel, ConfigDict, Field, StringConstraints, model_validator
 
+from app.modules.events.schemas import EventRef
 from app.modules.users.schemas import UserSummary
 from app.shared.enums import Scope
 
@@ -15,6 +16,7 @@ class NoteCreate(BaseModel):
     scope: Scope = Scope.PERSONAL
     title: Title
     content_md: Content = ""
+    event_id: uuid.UUID | None = None
 
 
 class NoteUpdate(BaseModel):
@@ -22,10 +24,11 @@ class NoteUpdate(BaseModel):
 
     title: Title | None = None
     content_md: Content | None = None
+    event_id: uuid.UUID | None = None
 
     @model_validator(mode="after")
     def _fields_not_null(self) -> Self:
-        for field in self.model_fields_set:
+        for field in self.model_fields_set - {"event_id"}:
             if getattr(self, field) is None:
                 raise ValueError(f"'{field}' no puede ser null")
         return self
@@ -39,6 +42,7 @@ class NoteRead(BaseModel):
     title: str
     content_md: str
     author: UserSummary
+    event: EventRef | None
     created_at: datetime
     updated_at: datetime
     can_edit: bool = Field(

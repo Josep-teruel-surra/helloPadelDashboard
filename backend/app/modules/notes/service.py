@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.errors import ForbiddenError, NotFoundError
 from app.modules.notes.models import Note
 from app.modules.notes.schemas import NoteCreate, NoteRead, NoteUpdate
+from app.modules.todos import service as todos_service
 from app.modules.users.models import User
 from app.shared.enums import Scope
 from app.shared.permissions import is_visible, visible_to
@@ -30,11 +31,14 @@ async def list_notes(
     *,
     scope: Scope | None = None,
     q: str | None = None,
+    event_id: uuid.UUID | None = None,
     limit: int = 100,
 ) -> list[Note]:
     query = select(Note).where(visible_to(Note.scope, Note.author_id, user))
     if scope is not None:
         query = query.where(Note.scope == scope)
+    if event_id is not None:
+        query = query.where(Note.event_id == event_id)
     if q:
         query = query.where(
             or_(
@@ -55,19 +59,25 @@ async def get_visible(session: AsyncSession, user: User, note_id: uuid.UUID) -> 
 
 
 async def create_note(session: AsyncSession, user: User, data: NoteCreate) -> Note:
+    if data.event_id is not None:
+        await todos_service.check_event(session, data.event_id)
     note = Note(**data.model_dump(), author_id=user.id)
     session.add(note)
     await session.commit()
-    await session.refresh(note, ["author"])
+    await session.refresh(note, ["author", "event"])
     return note
 
 
 async def update_note(session: AsyncSession, user: User, note: Note, data: NoteUpdate) -> Note:
     if not can_edit(user, note):
         raise ForbiddenError("Solo el autor o un admin pueden editar esta nota")
-    for field, value in data.model_dump(exclude_unset=True).items():
+    changes = data.model_dump(exclude_unset=True)
+    if changes.get("event_id") is not None:
+        await todos_service.check_event(session, changes["event_id"])
+    for field, value in changes.items():
         setattr(note, field, value)
     await session.commit()
+    await session.refresh(note, ["author", "event"])
     return note
 
 

@@ -6,6 +6,7 @@ import typer
 from fastapi import HTTPException
 from pydantic import ValidationError
 
+import app.models  # noqa: F401  (registra todos los modelos antes de usarlos)
 from app.core.database import SessionLocal, engine
 from app.modules.users import service as users_service
 from app.modules.users.models import UserRole
