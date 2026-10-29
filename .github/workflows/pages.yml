@@ -6,6 +6,7 @@ name: Frontend en GitHub Pages
 #   API_URL    URL pública del backend (https://…), sin /api al final. Si no existe, se
 #              publica la demo con datos de ejemplo (sin backend, cambios sin guardar).
 #   BASE_PATH  Por defecto /<repo>/; pon "/" si usas un dominio propio.
+# Para volver a publicar sin cambios: Actions → «Frontend en GitHub Pages» → Run workflow.
 
 on:
   push:
