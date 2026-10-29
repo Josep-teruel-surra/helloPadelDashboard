@@ -29,6 +29,15 @@ class PasswordChange(BaseModel):
     new_password: Password
 
 
+class UserSummary(BaseModel):
+    """Referencia ligera a un usuario dentro de otros recursos."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    full_name: str
+
+
 class UserRead(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
