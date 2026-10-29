@@ -60,7 +60,8 @@ backend/app/
 ├── modules/    # un paquete por dominio: models, schemas, service, router
 │   ├── auth/
 │   ├── users/
-│   └── todos/
+│   ├── todos/
+│   └── notes/
 ├── models.py   # registro de modelos para Alembic
 ├── cli.py      # comandos de gestión
 └── main.py
@@ -70,6 +71,7 @@ backend/app/
 
 - Lo **personal** (to-dos, notas) solo lo ve y lo modifica su dueño, admin incluido. A los demás les devuelve 404.
 - **To-dos de empresa:** todos los ven y pueden marcarlos como hechos. Editar o borrar: creador, persona asignada o admin.
+- **Notas de empresa:** todos las leen. Editar o borrar: el autor o un admin. El contenido es markdown y el ámbito de una nota no se puede cambiar.
 
 ## Autenticación
 

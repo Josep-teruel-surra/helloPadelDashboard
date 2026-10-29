@@ -1,0 +1,23 @@
+import uuid
+
+from sqlalchemy import ForeignKey, Index, String, Text
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from app.modules.users.models import User
+from app.shared.enums import Scope
+from app.shared.models import Base, TimestampMixin, UUIDPrimaryKeyMixin, pg_enum
+
+
+class Note(UUIDPrimaryKeyMixin, TimestampMixin, Base):
+    __tablename__ = "notes"
+    __table_args__ = (
+        Index("ix_notes_scope_updated_at", "scope", "updated_at"),
+        Index("ix_notes_author_id_scope", "author_id", "scope"),
+    )
+
+    scope: Mapped[Scope] = mapped_column(pg_enum(Scope, "scope"))
+    title: Mapped[str] = mapped_column(String(200))
+    content_md: Mapped[str] = mapped_column(Text, default="", server_default="")
+    author_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+
+    author: Mapped[User] = relationship(lazy="joined")
