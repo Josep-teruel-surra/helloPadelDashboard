@@ -36,11 +36,13 @@ export function Card({
   className?: string;
 }) {
   return (
-    <section className={cn("rounded-2xl border border-stone-200 bg-white p-4 sm:p-5", className)}>
+    <section
+      className={cn("min-w-0 rounded-2xl border border-stone-200 bg-white p-4 sm:p-5", className)}
+    >
       {(title || actions) && (
         <div className="mb-3 flex items-center justify-between gap-2">
           {title && (
-            <h2 className="flex items-center gap-2 text-sm font-bold tracking-wide text-stone-500 uppercase">
+            <h2 className="flex min-w-0 items-center gap-2 text-sm font-bold tracking-wide whitespace-nowrap text-stone-500 uppercase">
               {icon}
               {title}
             </h2>

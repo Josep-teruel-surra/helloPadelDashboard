@@ -1,5 +1,5 @@
 import { api } from "./client";
-import type { Note, Role, Scope, Todo, TokenResponse, User } from "./types";
+import type { HomeSummary, Note, Role, Scope, Todo, TokenResponse, User, Weather } from "./types";
 
 // --- Auth ---
 
@@ -82,4 +82,19 @@ export const notesApi = {
   update: (id: string, data: Partial<Omit<NoteCreateInput, "scope">>) =>
     api<Note>(`/notes/${id}`, { method: "PATCH", body: data }),
   remove: (id: string) => api<void>(`/notes/${id}`, { method: "DELETE" }),
+};
+
+// --- Home y tiempo ---
+
+export const homeApi = {
+  summary: () => api<HomeSummary>("/home"),
+};
+
+export interface Coordinates {
+  lat: number;
+  lon: number;
+}
+
+export const weatherApi = {
+  get: (coords: Coordinates | null) => api<Weather>("/weather", { query: { ...coords } }),
 };

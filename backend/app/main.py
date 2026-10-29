@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.config import settings
 from app.modules.auth.router import router as auth_router
+from app.modules.home.router import router as home_router
 from app.modules.notes.router import router as notes_router
 from app.modules.todos.router import router as todos_router
 from app.modules.users.router import router as users_router
@@ -37,6 +38,7 @@ def create_app() -> FastAPI:
     api.include_router(todos_router)
     api.include_router(notes_router)
     api.include_router(weather_router)
+    api.include_router(home_router)
     app.include_router(api)
     return app
 

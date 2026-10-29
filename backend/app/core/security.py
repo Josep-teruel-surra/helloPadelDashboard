@@ -1,6 +1,7 @@
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from typing import Any, Literal
+from zoneinfo import ZoneInfo
 
 import jwt
 from argon2 import PasswordHasher
@@ -21,6 +22,11 @@ class TokenError(Exception):
 
 def utcnow() -> datetime:
     return datetime.now(UTC)
+
+
+def local_today() -> date:
+    """Fecha de hoy en la zona horaria de la academia."""
+    return datetime.now(ZoneInfo(settings.timezone)).date()
 
 
 def hash_password(password: str) -> str:

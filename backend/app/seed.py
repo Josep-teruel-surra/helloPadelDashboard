@@ -1,10 +1,10 @@
 """Datos de ejemplo para desarrollo. Nunca se ejecuta en producción."""
 
-from datetime import date, timedelta
+from datetime import timedelta
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.security import hash_password, utcnow
+from app.core.security import hash_password, local_today, utcnow
 from app.modules.notes.models import Note
 from app.modules.todos.models import Todo
 from app.modules.users.models import User, UserRole
@@ -33,7 +33,7 @@ async def seed(session: AsyncSession) -> bool:
     session.add_all([admin, ana, bruno])
     await session.flush()
 
-    today = date.today()
+    today = local_today()
     session.add_all(
         [
             Todo(

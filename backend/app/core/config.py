@@ -12,6 +12,8 @@ class Settings(BaseSettings):
 
     app_name: str = "helloPadelDashboard"
     environment: Literal["development", "test", "production"] = "development"
+    # Zona horaria de la academia: decide qué es "hoy" para fechas límite.
+    timezone: str = "Europe/Madrid"
 
     database_url: str = "postgresql+asyncpg://hellopadel:hellopadel@localhost:5432/hellopadel"
 

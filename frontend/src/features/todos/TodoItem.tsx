@@ -21,7 +21,11 @@ export function TodoCheckbox({ todo }: { todo: Todo }) {
   const queryClient = useQueryClient();
   const toggle = useMutation({
     mutationFn: () => todosApi.update(todo.id, { is_done: !todo.is_done }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["todos"] }),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["todos"] }),
+        queryClient.invalidateQueries({ queryKey: ["home"] }),
+      ]),
     onError: (error) => window.alert(errorMessage(error)),
   });
 

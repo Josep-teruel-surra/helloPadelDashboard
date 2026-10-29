@@ -77,7 +77,8 @@ backend/app/
 │   ├── users/
 │   ├── todos/
 │   ├── notes/
-│   └── weather/
+│   ├── weather/
+│   └── home/
 ├── models.py   # registro de modelos para Alembic
 ├── cli.py      # comandos de gestión
 └── main.py
@@ -107,6 +108,10 @@ docker compose up -d --build --renew-anon-volumes frontend
 - Lo **personal** (to-dos, notas) solo lo ve y lo modifica su dueño, admin incluido. A los demás les devuelve 404.
 - **To-dos de empresa:** todos los ven y pueden marcarlos como hechos. Editar o borrar: creador, persona asignada o admin.
 - **Notas de empresa:** todos las leen. Editar o borrar: el autor o un admin. El contenido es markdown y el ámbito de una nota no se puede cambiar.
+
+## Home
+
+`GET /api/home` devuelve en una sola llamada el resumen de la pantalla principal: las 5 primeras tareas pendientes personales y de empresa, los contadores (pendientes, asignadas a ti, vencidas) y las 4 últimas notas que puedes ver. "Vencida" se calcula con la fecha de `TIMEZONE` (por defecto `Europe/Madrid`). El tiempo se pide aparte, con la ubicación del navegador; si no hay permiso, usa Barcelona.
 
 ## Tiempo
 
