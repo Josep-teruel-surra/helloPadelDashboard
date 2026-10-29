@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import BadRequestError, ConflictError, ForbiddenError, NotFoundError
 from app.modules.campuses.models import Campus
+from app.modules.exams.models import ExamSubmission
 from app.modules.students.models import Student
 from app.modules.students.schemas import StudentCreate, StudentUpdate
 from app.modules.users.models import User
@@ -81,5 +82,9 @@ async def update_student(session: AsyncSession, student: Student, data: StudentU
 async def delete_student(session: AsyncSession, user: User, student: Student) -> None:
     if not user.is_admin:
         raise ForbiddenError("Solo un admin puede borrar alumnos")
+    if await session.scalar(
+        select(ExamSubmission.id).where(ExamSubmission.student_id == student.id).limit(1)
+    ):
+        raise ConflictError("El alumno tiene entregas de examen: no se puede borrar")
     await session.delete(student)
     await session.commit()

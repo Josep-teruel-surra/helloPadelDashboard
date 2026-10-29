@@ -11,7 +11,9 @@ from app.modules.campuses.models import Campus
 from app.modules.events import service as events_service
 from app.modules.events.models import Event, EventKind, EventStatus
 from app.modules.events.schemas import EventCreate
-from app.modules.exams.models import Certification
+from app.modules.exams import service as exams_service
+from app.modules.exams.models import Certification, ExamKind, ExamOutcome, ExamStatus
+from app.modules.exams.schemas import CorrectionIn, SubmissionCreate
 from app.modules.inventory import service as inventory_service
 from app.modules.inventory.models import ProductCategory
 from app.modules.inventory.schemas import ProductCreate, VariantCreate
@@ -182,32 +184,67 @@ async def seed(session: AsyncSession) -> bool:
     to_zurich.shipped_at = utcnow() - timedelta(days=12)
     await session.commit()
 
-    # Certificaciones y alumnos (para las correcciones de exámenes).
-    session.add(Certification(name="Bronze 1", position=1))
-    session.add_all(
-        [
-            Student(
-                full_name="Lars Nielsen",
-                email="lars@example.com",
-                country_code="DK",
-                campus_id=copenhagen.id,
-            ),
-            Student(
-                full_name="Sanne de Vries",
-                email="sanne@example.com",
-                country_code="NL",
-                campus_id=amsterdam.id,
-            ),
-            Student(
-                full_name="Lukas Huber",
-                email="lukas@example.com",
-                country_code="AT",
-                campus_id=vienna.id,
-            ),
-            Student(full_name="Jonas Weber", email="jonas@example.com", country_code="DE"),
-        ]
+    # Certificaciones, alumnos y entregas de examen.
+    bronze1 = Certification(name="Bronze 1", position=1)
+    lars = Student(
+        full_name="Lars Nielsen",
+        email="lars@example.com",
+        country_code="DK",
+        campus_id=copenhagen.id,
     )
+    sanne = Student(
+        full_name="Sanne de Vries",
+        email="sanne@example.com",
+        country_code="NL",
+        campus_id=amsterdam.id,
+    )
+    lukas = Student(
+        full_name="Lukas Huber", email="lukas@example.com", country_code="AT", campus_id=vienna.id
+    )
+    jonas = Student(full_name="Jonas Weber", email="jonas@example.com", country_code="DE")
+    session.add_all([bronze1, lars, sanne, lukas, jonas])
     await session.commit()
+
+    async def exam(student: Student, kind: ExamKind, received_days_ago: int, **data: Any):
+        return await exams_service.create_submission(
+            session,
+            admin,
+            SubmissionCreate(
+                student_id=student.id,
+                certification_id=bronze1.id,
+                kind=kind,
+                received_on=today - timedelta(days=received_days_ago),
+                **data,
+            ),
+        )
+
+    # Vídeo de Lars: primer intento, a repetir y ya comunicado.
+    first = await exam(lars, ExamKind.VIDEO, 25, assignee_id=bruno.id)
+    await exams_service.correct_submission(
+        session,
+        bruno,
+        first,
+        CorrectionIn(outcome=ExamOutcome.RESUBMIT, feedback_md="Grabar la volea desde el lateral."),
+    )
+    await exams_service.change_status(session, first, ExamStatus.NOTIFIED)
+    # Segundo intento, llegado por WeTransfer y ya guardado en Drive.
+    second = await exam(
+        lars,
+        ExamKind.VIDEO,
+        2,
+        link_url="https://we.tl/t-lars2",
+        assignee_id=ana.id,
+    )
+    second.saved_url = "https://drive.google.com/drive/folders/ejemplo-lars"
+    second.saved_at = utcnow()
+    await session.commit()
+    # Vídeo de Sanne por WeTransfer: el enlace caduca mañana y no está guardado.
+    await exam(sanne, ExamKind.VIDEO, 6, link_url="https://we.tl/t-sanne", assignee_id=ana.id)
+    # Test de Lukas, en corrección.
+    in_review = await exam(lukas, ExamKind.TEST, 4, assignee_id=ana.id)
+    await exams_service.change_status(session, in_review, ExamStatus.IN_REVIEW)
+    # Test de Jonas, recién llegado y sin asignar.
+    await exam(jonas, ExamKind.TEST, 0)
     # Apartado para Copenhague (completa su tarea de material).
     await shipment(
         event_id=copenhagen_training.id,

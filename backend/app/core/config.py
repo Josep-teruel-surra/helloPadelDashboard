@@ -28,6 +28,10 @@ class Settings(BaseSettings):
     # Orígenes separados por comas; vacío desactiva CORS.
     cors_origins: str = ""
 
+    # Correcciones de exámenes: plazos por defecto (editables en cada entrega).
+    exam_correction_days: int = 7
+    wetransfer_link_days: int = 7
+
     # Tiempo (Open-Meteo, sin API key). Ubicación por defecto: Barcelona.
     open_meteo_url: str = "https://api.open-meteo.com/v1/forecast"
     weather_cache_ttl_seconds: int = 15 * 60

@@ -3,7 +3,7 @@
 from app.modules.auth.models import RefreshToken
 from app.modules.campuses.models import Campus
 from app.modules.events.models import Event
-from app.modules.exams.models import Certification
+from app.modules.exams.models import Certification, ExamSubmission
 from app.modules.inventory.models import Product, ProductVariant, StockMovement
 from app.modules.notes.models import Note
 from app.modules.shipments.models import Shipment, ShipmentItem
@@ -17,6 +17,7 @@ __all__ = [
     "Campus",
     "Certification",
     "Event",
+    "ExamSubmission",
     "Note",
     "Product",
     "ProductVariant",
