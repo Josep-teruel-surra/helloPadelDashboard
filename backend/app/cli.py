@@ -52,5 +52,31 @@ def create_admin(
     typer.secho(f"Administrador {data.email} creado.", fg=typer.colors.GREEN)
 
 
+@cli.command("seed")
+def seed_command() -> None:
+    """Carga datos de ejemplo (usuarios, tareas y notas). Solo en desarrollo."""
+    from app.core.config import settings
+    from app.seed import SEED_PASSWORD, seed
+
+    if settings.environment == "production":
+        typer.secho("El seed no se puede ejecutar en producción.", fg=typer.colors.RED, err=True)
+        raise typer.Exit(1)
+
+    async def _run() -> bool:
+        try:
+            async with SessionLocal() as session:
+                return await seed(session)
+        finally:
+            await engine.dispose()
+
+    if asyncio.run(_run()):
+        typer.secho(
+            f"Datos de ejemplo creados. Contraseña de todos los usuarios: {SEED_PASSWORD}",
+            fg=typer.colors.GREEN,
+        )
+    else:
+        typer.echo("Los datos de ejemplo ya existían; no se ha cambiado nada.")
+
+
 if __name__ == "__main__":
     cli()

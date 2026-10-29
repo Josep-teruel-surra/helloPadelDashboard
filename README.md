@@ -3,7 +3,7 @@
 Dashboard interno de Hello Padel Academy: to-dos, notas, tiempo y, más adelante, inventario, calendario y métricas de redes.
 
 - **Backend:** FastAPI + SQLAlchemy 2 (async) + Alembic + PostgreSQL (`backend/`)
-- **Frontend:** React + Vite + TypeScript + Tailwind (`frontend/`, próximamente)
+- **Frontend:** React + Vite + TypeScript + Tailwind (`frontend/`)
 
 ## Arrancar
 
@@ -14,6 +14,7 @@ docker compose up --build
 
 Las migraciones se aplican solas al arrancar el backend.
 
+- Dashboard: http://localhost:5173
 - API: http://localhost:8000/api
 - Documentación interactiva: http://localhost:8000/api/docs
 - Postgres en el host: `localhost:5433` (configurable con `DB_PORT`)
@@ -28,6 +29,14 @@ docker compose exec backend python -m app.cli create-admin
 
 Te pedirá email, nombre y contraseña (mínimo 8 caracteres). También acepta `--email`, `--name` y `--password`. El resto de cuentas las crea un admin desde el dashboard (`POST /api/users`).
 
+## Datos de ejemplo (opcional, solo desarrollo)
+
+```bash
+docker compose exec backend python -m app.cli seed
+```
+
+Crea tres usuarios con tareas y notas de ejemplo: `admin@example.com` (admin), `ana@example.com` y `bruno@example.com` (equipo). Todos usan la contraseña `hellopadel-dev`. Si ya existen, no hace nada. No se puede ejecutar con `ENVIRONMENT=production`.
+
 ## Tests
 
 ```bash
@@ -40,6 +49,12 @@ Lint y formato:
 
 ```bash
 docker compose run --rm --no-deps backend sh -c "ruff check . && ruff format --check ."
+```
+
+Typecheck y build del frontend:
+
+```bash
+docker compose exec frontend npm run build
 ```
 
 ## Migraciones
@@ -66,6 +81,25 @@ backend/app/
 ├── models.py   # registro de modelos para Alembic
 ├── cli.py      # comandos de gestión
 └── main.py
+```
+
+## Estructura del frontend
+
+```
+frontend/src/
+├── api/          # cliente fetch (refresh automático), endpoints, tipos y hooks de TanStack Query
+├── auth/         # AuthContext y guards de rutas
+├── components/   # layout (sidebar, navegación) y UI básica
+├── features/     # una carpeta por sección: home, todos, notes, users, account, login
+└── lib/          # formato de fechas, utilidades
+```
+
+Para añadir una sección: crea su carpeta en `features/`, añade la ruta en `App.tsx` y el enlace en `components/layout/navigation.ts`.
+
+Si cambias dependencias del frontend, recrea su volumen de `node_modules`:
+
+```bash
+docker compose up -d --build --renew-anon-volumes frontend
 ```
 
 ## Permisos

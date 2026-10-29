@@ -1,0 +1,39 @@
+@import "tailwindcss";
+@plugin "@tailwindcss/typography";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* Colores de marca de Hello Padel */
+  --color-brand: #ffdd3c;
+  --color-brand-dark: #f0c800;
+  --color-carbon: #141414;
+  --color-carbon-2: #1c1c1c;
+  --color-carbon-line: #2a2a2a;
+}
+
+@layer base {
+  body {
+    @apply bg-stone-100 font-sans text-stone-900 antialiased;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-amber-500;
+  }
+
+  dialog::backdrop {
+    @apply bg-black/40;
+  }
+}
+
+/* Listas de casillas de markdown (- [ ] / - [x]) sin viñeta.
+   Fuera de @layer para imponerse a los estilos de `prose` (capa utilities). */
+.prose ul.contains-task-list {
+  @apply list-none pl-0;
+}
+.prose .task-list-item {
+  @apply pl-0;
+}
+.prose .task-list-item input {
+  @apply mr-2 accent-amber-500;
+}
