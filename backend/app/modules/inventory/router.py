@@ -98,7 +98,7 @@ async def list_movements(
     movements = await service.list_movements(
         session, variant_id=variant_id, product_id=product_id, limit=limit
     )
-    return [service.movement_read(m) for m in movements]
+    return await service.movement_reads(session, movements)
 
 
 @router.post("/stock/movements", response_model=MovementRead, status_code=status.HTTP_201_CREATED)

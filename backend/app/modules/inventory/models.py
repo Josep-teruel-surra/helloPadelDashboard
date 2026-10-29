@@ -83,6 +83,7 @@ class StockMovement(UUIDPrimaryKeyMixin, Base):
             name="quantity_sign_matches_kind",
         ),
         Index("ix_stock_movements_variant_id_created_at", "variant_id", "created_at"),
+        Index("ix_stock_movements_shipment_id", "shipment_id"),
     )
 
     # RESTRICT: una variante con historial no se puede borrar, solo desactivar.
@@ -94,6 +95,10 @@ class StockMovement(UUIDPrimaryKeyMixin, Base):
     )
     quantity: Mapped[int]
     note: Mapped[str | None] = mapped_column(String(500))
+    # Envío que generó el movimiento (salida al enviar, devolución al cancelar).
+    shipment_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey("shipments.id", ondelete="RESTRICT")
+    )
     created_by_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(default=utcnow, server_default=func.now())
 

@@ -62,7 +62,9 @@ class VariantRead(BaseModel):
     low_stock_threshold: int | None
     is_active: bool
     on_hand: int = Field(0, description="Unidades en almacén (suma de movimientos)")
-    low_stock: bool = Field(False, description="Por debajo o igual al umbral de aviso")
+    reserved: int = Field(0, description="Apartadas en envíos en preparación")
+    available: int = Field(0, description="En almacén menos apartadas")
+    low_stock: bool = Field(False, description="Disponible por debajo o igual al umbral")
 
 
 # --- Productos ---
@@ -104,6 +106,7 @@ class ProductRead(BaseModel):
     is_active: bool
     variants: list[VariantRead]
     total_on_hand: int = 0
+    total_available: int = 0
     created_at: datetime
     updated_at: datetime
 
@@ -141,5 +144,7 @@ class MovementRead(BaseModel):
     quantity: int
     note: str | None
     variant: VariantRef
+    shipment_id: uuid.UUID | None = None
+    shipment_number: int | None = None
     created_by: UserSummary
     created_at: datetime

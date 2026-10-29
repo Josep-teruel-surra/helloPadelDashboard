@@ -1,5 +1,6 @@
 import uuid
 from collections.abc import Iterable
+from dataclasses import dataclass
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -24,41 +25,82 @@ from app.modules.inventory.schemas import (
     VariantRef,
     VariantUpdate,
 )
+from app.modules.shipments.models import Shipment, ShipmentItem, ShipmentStatus
 from app.modules.users.models import User
 from app.modules.users.schemas import UserSummary
 
 # --- Stock ---
 
 
-async def on_hand(session: AsyncSession, variant_ids: Iterable[uuid.UUID]) -> dict[uuid.UUID, int]:
-    """Unidades en almacén por variante (las que no tienen movimientos, 0)."""
+@dataclass(frozen=True)
+class StockLevel:
+    on_hand: int = 0
+    reserved: int = 0
+
+    @property
+    def available(self) -> int:
+        return self.on_hand - self.reserved
+
+
+async def stock_levels(
+    session: AsyncSession, variant_ids: Iterable[uuid.UUID]
+) -> dict[uuid.UUID, StockLevel]:
+    """Stock por variante: en almacén (suma de movimientos) y apartado (envíos en preparación)."""
     ids = list(variant_ids)
     if not ids:
         return {}
-    rows = await session.execute(
-        select(StockMovement.variant_id, func.sum(StockMovement.quantity))
-        .where(StockMovement.variant_id.in_(ids))
-        .group_by(StockMovement.variant_id)
+    on_hand = dict(
+        (
+            await session.execute(
+                select(StockMovement.variant_id, func.sum(StockMovement.quantity))
+                .where(StockMovement.variant_id.in_(ids))
+                .group_by(StockMovement.variant_id)
+            )
+        ).all()
     )
-    totals = {variant_id: int(total) for variant_id, total in rows}
-    return {variant_id: totals.get(variant_id, 0) for variant_id in ids}
+    reserved = dict(
+        (
+            await session.execute(
+                select(ShipmentItem.variant_id, func.sum(ShipmentItem.quantity))
+                .join(Shipment)
+                .where(
+                    ShipmentItem.variant_id.in_(ids),
+                    Shipment.status == ShipmentStatus.PREPARING,
+                )
+                .group_by(ShipmentItem.variant_id)
+            )
+        ).all()
+    )
+    return {
+        vid: StockLevel(on_hand=int(on_hand.get(vid, 0)), reserved=int(reserved.get(vid, 0)))
+        for vid in ids
+    }
 
 
-def _variant_read(variant: ProductVariant, stock: int) -> VariantRead:
+def _variant_read(variant: ProductVariant, level: StockLevel) -> VariantRead:
     threshold = variant.low_stock_threshold
     return VariantRead.model_validate(variant).model_copy(
-        update={"on_hand": stock, "low_stock": threshold is not None and stock <= threshold}
+        update={
+            "on_hand": level.on_hand,
+            "reserved": level.reserved,
+            "available": level.available,
+            "low_stock": threshold is not None and level.available <= threshold,
+        }
     )
 
 
 async def to_reads(session: AsyncSession, products: list[Product]) -> list[ProductRead]:
-    stock = await on_hand(session, (v.id for p in products for v in p.variants))
+    levels = await stock_levels(session, (v.id for p in products for v in p.variants))
     reads = []
     for product in products:
-        variants = [_variant_read(v, stock[v.id]) for v in product.variants]
+        variants = [_variant_read(v, levels[v.id]) for v in product.variants]
         reads.append(
             ProductRead.model_validate(product).model_copy(
-                update={"variants": variants, "total_on_hand": sum(v.on_hand for v in variants)}
+                update={
+                    "variants": variants,
+                    "total_on_hand": sum(v.on_hand for v in variants),
+                    "total_available": sum(v.available for v in variants),
+                }
             )
         )
     return reads
@@ -167,19 +209,22 @@ async def update_product(session: AsyncSession, product: Product, data: ProductU
     return product
 
 
-async def _has_movements(session: AsyncSession, variant_ids: list[uuid.UUID]) -> bool:
+async def _in_use(session: AsyncSession, variant_ids: list[uuid.UUID]) -> bool:
+    """True si alguna variante tiene movimientos de stock o aparece en un envío."""
     if not variant_ids:
         return False
-    query = select(StockMovement.id).where(StockMovement.variant_id.in_(variant_ids)).limit(1)
-    return await session.scalar(query) is not None
+    for column in (StockMovement.variant_id, ShipmentItem.variant_id):
+        if await session.scalar(select(column).where(column.in_(variant_ids)).limit(1)):
+            return True
+    return False
 
 
 async def delete_product(session: AsyncSession, user: User, product: Product) -> None:
     if not user.is_admin:
         raise ForbiddenError("Solo un admin puede borrar productos")
-    if await _has_movements(session, [v.id for v in product.variants]):
+    if await _in_use(session, [v.id for v in product.variants]):
         raise ConflictError(
-            "El producto tiene movimientos de stock: desactívalo en lugar de borrarlo"
+            "El producto tiene movimientos o envíos: desactívalo en lugar de borrarlo"
         )
     await session.delete(product)
     await session.commit()
@@ -236,8 +281,8 @@ async def update_variant(
 async def delete_variant(session: AsyncSession, user: User, variant: ProductVariant) -> None:
     if not user.is_admin:
         raise ForbiddenError("Solo un admin puede borrar variantes")
-    if await _has_movements(session, [variant.id]):
-        raise ConflictError("La variante tiene movimientos de stock: desactívala en su lugar")
+    if await _in_use(session, [variant.id]):
+        raise ConflictError("La variante tiene movimientos o envíos: desactívala en su lugar")
     if len(variant.product.variants) == 1:
         raise ConflictError("Un producto necesita al menos una variante")
     await session.delete(variant)
@@ -247,7 +292,7 @@ async def delete_variant(session: AsyncSession, user: User, variant: ProductVari
 # --- Movimientos ---
 
 
-def movement_read(movement: StockMovement) -> MovementRead:
+def movement_read(movement: StockMovement, shipment_number: int | None = None) -> MovementRead:
     variant = movement.variant
     return MovementRead(
         id=movement.id,
@@ -260,9 +305,26 @@ def movement_read(movement: StockMovement) -> MovementRead:
             product_id=variant.product_id,
             product_name=variant.product.name,
         ),
+        shipment_id=movement.shipment_id,
+        shipment_number=shipment_number,
         created_by=UserSummary.model_validate(movement.created_by),
         created_at=movement.created_at,
     )
+
+
+async def movement_reads(
+    session: AsyncSession, movements: list[StockMovement]
+) -> list[MovementRead]:
+    shipment_ids = {m.shipment_id for m in movements if m.shipment_id}
+    numbers: dict[uuid.UUID, int] = {}
+    if shipment_ids:
+        rows = await session.execute(
+            select(Shipment.id, Shipment.number).where(Shipment.id.in_(shipment_ids))
+        )
+        numbers = dict(rows.all())
+    return [
+        movement_read(m, numbers.get(m.shipment_id) if m.shipment_id else None) for m in movements
+    ]
 
 
 async def list_movements(

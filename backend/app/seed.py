@@ -1,5 +1,6 @@
 """Datos de ejemplo para desarrollo. Nunca se ejecuta en producción."""
 
+import uuid
 from datetime import timedelta
 from typing import Any
 
@@ -14,6 +15,9 @@ from app.modules.inventory import service as inventory_service
 from app.modules.inventory.models import ProductCategory
 from app.modules.inventory.schemas import ProductCreate, VariantCreate
 from app.modules.notes.models import Note
+from app.modules.shipments import service as shipments_service
+from app.modules.shipments.models import ShipmentStatus
+from app.modules.shipments.schemas import ItemIn, ShipmentCreate, StatusChange
 from app.modules.todos.models import Todo
 from app.modules.users.models import User, UserRole
 from app.modules.users.service import get_by_email
@@ -108,8 +112,11 @@ async def seed(session: AsyncSession) -> bool:
         start_date=today + timedelta(days=75),
     )
 
-    async def product(name: str, category: ProductCategory, *variants: tuple) -> None:
-        await inventory_service.create_product(
+    async def product(
+        name: str, category: ProductCategory, *variants: tuple[str, int, int | None]
+    ) -> dict[str, uuid.UUID]:
+        """Crea el producto y devuelve sus variantes por etiqueta."""
+        created = await inventory_service.create_product(
             session,
             admin,
             ProductCreate(
@@ -121,8 +128,9 @@ async def seed(session: AsyncSession) -> bool:
                 ],
             ),
         )
+        return {v.label: v.id for v in created.variants}
 
-    await product(
+    shirt = await product(
         "Camiseta Hello Padel 2026",
         ProductCategory.CLOTHING,
         ("XS", 10, None),
@@ -131,15 +139,53 @@ async def seed(session: AsyncSession) -> bool:
         ("L", 45, 15),
         ("XL", 20, 5),
     )
-    await product(
+    book1 = await product(
         "Libro Nivel 1",
         ProductCategory.BOOK,
         ("Español", 30, 10),
         ("Inglés", 25, 10),
-        ("Alemán", 8, 10),
+        ("Alemán", 20, 10),
     )
     await product("Libro Nivel 2", ProductCategory.BOOK, ("Español", 20, 5), ("Inglés", 12, 5))
-    await product("Bolsa de tela Hello Padel", ProductCategory.OTHER, ("Única", 50, None))
+    bag = await product("Bolsa de tela Hello Padel", ProductCategory.OTHER, ("Única", 50, None))
+
+    async def shipment(*statuses: ShipmentStatus, **data: Any) -> None:
+        created = await shipments_service.create_shipment(session, admin, ShipmentCreate(**data))
+        for status in statuses:
+            created = await shipments_service.change_status(
+                session, admin, created, StatusChange(status=status)
+            )
+
+    # Ya entregado: libros para la federación austriaca.
+    await shipment(
+        ShipmentStatus.SHIPPED,
+        ShipmentStatus.DELIVERED,
+        campus_id=vienna.id,
+        items=[ItemIn(variant_id=book1["Alemán"], quantity=12)],
+        carrier="Correos",
+    )
+    # En camino a Zúrich para la formación.
+    await shipment(
+        ShipmentStatus.SHIPPED,
+        event_id=zurich_training.id,
+        items=[
+            ItemIn(variant_id=shirt["M"], quantity=6),
+            ItemIn(variant_id=shirt["L"], quantity=4),
+            ItemIn(variant_id=bag["Única"], quantity=10),
+        ],
+        carrier="DHL",
+        tracking_number="JD014600006281",
+    )
+    # Apartado para Copenhague (completa su tarea de material).
+    await shipment(
+        event_id=copenhagen_training.id,
+        items=[
+            ItemIn(variant_id=shirt["S"], quantity=10),
+            ItemIn(variant_id=shirt["M"], quantity=20),
+            ItemIn(variant_id=shirt["L"], quantity=10),
+            ItemIn(variant_id=book1["Inglés"], quantity=15),
+        ],
+    )
 
     session.add_all(
         [

@@ -87,7 +87,8 @@ backend/app/
 │   ├── home/
 │   ├── campuses/
 │   ├── events/
-│   └── inventory/
+│   ├── inventory/
+│   └── shipments/
 ├── models.py   # registro de modelos para Alembic
 ├── cli.py      # comandos de gestión
 └── main.py

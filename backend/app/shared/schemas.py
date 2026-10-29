@@ -34,7 +34,17 @@ OptionalText200 = Annotated[
 OptionalShortText = Annotated[
     Annotated[str, Field(max_length=40)] | None, BeforeValidator(blank_to_none)
 ]
+OptionalText80 = Annotated[
+    Annotated[str, Field(max_length=80)] | None, BeforeValidator(blank_to_none)
+]
+OptionalHttpUrl = Annotated[
+    Annotated[str, Field(max_length=500, pattern=r"^https?://")] | None,
+    BeforeValidator(blank_to_none),
+]
 OptionalEmail = Annotated[EmailStr | None, BeforeValidator(blank_to_none), AfterValidator(_lower)]
 OptionalCountryCode = Annotated[CountryCode | None, BeforeValidator(blank_to_none)]
 
 Markdown = Annotated[str, Field(max_length=50_000)]
+
+# Código de moneda ISO 4217 ("eur" → "EUR").
+Currency = Annotated[str, StringConstraints(pattern=r"^[A-Za-z]{3}$"), AfterValidator(str.upper)]

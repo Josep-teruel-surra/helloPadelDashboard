@@ -5,11 +5,12 @@ from typing import Literal
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.errors import BadRequestError, ForbiddenError, NotFoundError
+from app.core.errors import BadRequestError, ConflictError, ForbiddenError, NotFoundError
 from app.core.security import local_today
 from app.modules.campuses.models import Campus
 from app.modules.events.models import Event, EventStatus
 from app.modules.events.schemas import EventCreate, EventRead, EventUpdate, MaterialTask
+from app.modules.shipments.models import Shipment
 from app.modules.todos import service as todos_service
 from app.modules.todos.models import Todo
 from app.modules.users.models import User
@@ -160,6 +161,8 @@ async def update_event(session: AsyncSession, event: Event, data: EventUpdate) -
 async def delete_event(session: AsyncSession, user: User, event: Event) -> None:
     if not can_delete(user, event):
         raise ForbiddenError("Solo quien creó el evento o un admin pueden borrarlo")
+    if await session.scalar(select(Shipment.id).where(Shipment.event_id == event.id).limit(1)):
+        raise ConflictError("El evento tiene envíos: cancélalo en lugar de borrarlo")
     material_todo_id = event.material_todo_id
     await session.delete(event)
     await session.flush()
