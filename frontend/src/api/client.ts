@@ -25,7 +25,7 @@ export function setSessionExpiredHandler(handler: (() => void) | null): void {
 type QueryValue = string | number | boolean | null | undefined;
 
 interface RequestOptions {
-  method?: "GET" | "POST" | "PATCH" | "DELETE";
+  method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;
   query?: Record<string, QueryValue>;
   signal?: AbortSignal;

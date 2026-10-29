@@ -4,11 +4,18 @@ import { RequireAdmin, RequireAuth } from "@/auth/guards";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { buttonClass } from "@/components/ui/Button";
 import { AccountPage } from "@/features/account/AccountPage";
+import { CampusDetailPage } from "@/features/campuses/CampusDetailPage";
+import { CampusesPage } from "@/features/campuses/CampusesPage";
+import { EventDetailPage } from "@/features/events/EventDetailPage";
+import { EventsPage } from "@/features/events/EventsPage";
 import { HomePage } from "@/features/home/HomePage";
 import { LoginPage } from "@/features/login/LoginPage";
 import { NoteDetailPage } from "@/features/notes/NoteDetailPage";
 import { NoteNewPage } from "@/features/notes/NoteNewPage";
 import { NotesPage } from "@/features/notes/NotesPage";
+import { InventoryPage } from "@/features/inventory/InventoryPage";
+import { ShipmentDetailPage } from "@/features/shipments/ShipmentDetailPage";
+import { ShipmentsPage } from "@/features/shipments/ShipmentsPage";
 import { TodosPage } from "@/features/todos/TodosPage";
 import { UsersPage } from "@/features/users/UsersPage";
 
@@ -37,6 +44,13 @@ const router = createBrowserRouter([
           { path: "notas", element: <NotesPage /> },
           { path: "notas/nueva", element: <NoteNewPage /> },
           { path: "notas/:noteId", element: <NoteDetailPage /> },
+          { path: "eventos", element: <EventsPage /> },
+          { path: "eventos/:eventId", element: <EventDetailPage /> },
+          { path: "envios", element: <ShipmentsPage /> },
+          { path: "envios/:shipmentId", element: <ShipmentDetailPage /> },
+          { path: "material", element: <InventoryPage /> },
+          { path: "campus", element: <CampusesPage /> },
+          { path: "campus/:campusId", element: <CampusDetailPage /> },
           { path: "cuenta", element: <AccountPage /> },
           {
             element: <RequireAdmin />,

@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Check, Pencil, Trash2, UserRound } from "lucide-react";
+import { Link } from "react-router";
 
 import { errorMessage } from "@/api/client";
 import { todosApi } from "@/api/endpoints";
@@ -22,10 +23,9 @@ export function TodoCheckbox({ todo }: { todo: Todo }) {
   const toggle = useMutation({
     mutationFn: () => todosApi.update(todo.id, { is_done: !todo.is_done }),
     onSuccess: () =>
-      Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["todos"] }),
-        queryClient.invalidateQueries({ queryKey: ["home"] }),
-      ]),
+      Promise.all(
+        [["todos"], ["home"], ["events"]].map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+      ),
     onError: (error) => window.alert(errorMessage(error)),
   });
 
@@ -53,9 +53,11 @@ export function TodoCheckbox({ todo }: { todo: Todo }) {
 interface TodoItemProps {
   todo: Todo;
   onEdit: (todo: Todo) => void;
+  /** Ocúltalo cuando la lista ya está dentro del evento. */
+  showEvent?: boolean;
 }
 
-export function TodoItem({ todo, onEdit }: TodoItemProps) {
+export function TodoItem({ todo, onEdit, showEvent = true }: TodoItemProps) {
   const queryClient = useQueryClient();
   const remove = useMutation({
     mutationFn: () => todosApi.remove(todo.id),
@@ -89,6 +91,11 @@ export function TodoItem({ todo, onEdit }: TodoItemProps) {
               <UserRound className="size-3" aria-hidden />
               {todo.assignee.full_name}
             </Badge>
+          )}
+          {showEvent && todo.event && (
+            <Link to={`/eventos/${todo.event.id}`} className="text-amber-700 hover:underline">
+              {todo.event.title}
+            </Link>
           )}
           {isCompany && <span>Creada por {todo.created_by.full_name}</span>}
         </div>

@@ -101,7 +101,8 @@ frontend/src/
 ├── api/          # cliente fetch (refresh automático), endpoints, tipos y hooks de TanStack Query
 ├── auth/         # AuthContext y guards de rutas
 ├── components/   # layout (sidebar, navegación) y UI básica
-├── features/     # una carpeta por sección: home, todos, notes, users, account, login
+├── features/     # una carpeta por sección: home, events, shipments, inventory, campuses,
+│                 #   todos, notes, users, account, login
 └── lib/          # formato de fechas, utilidades
 ```
 

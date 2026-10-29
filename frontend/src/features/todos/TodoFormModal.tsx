@@ -18,13 +18,15 @@ interface TodoFormModalProps {
   /** Tarea a editar; si no hay, se crea una nueva. */
   todo?: Todo | null;
   defaultScope: Scope;
+  /** Al crear desde un evento, la tarea queda vinculada a él. */
+  defaultEventId?: string;
 }
 
-export function TodoFormModal({ open, onClose, todo, defaultScope }: TodoFormModalProps) {
+export function TodoFormModal({ open, onClose, todo, defaultScope, defaultEventId }: TodoFormModalProps) {
   return (
     <Modal open={open} onClose={onClose} title={todo ? "Editar tarea" : "Nueva tarea"}>
       {/* key: reinicia el formulario cada vez que cambia la tarea */}
-      <TodoForm key={todo?.id ?? `new-${defaultScope}`} todo={todo} defaultScope={defaultScope} onDone={onClose} />
+      <TodoForm key={todo?.id ?? `new-${defaultScope}`} todo={todo} defaultScope={defaultScope} defaultEventId={defaultEventId} onDone={onClose} />
     </Modal>
   );
 }
@@ -32,10 +34,12 @@ export function TodoFormModal({ open, onClose, todo, defaultScope }: TodoFormMod
 function TodoForm({
   todo,
   defaultScope,
+  defaultEventId,
   onDone,
 }: {
   todo?: Todo | null;
   defaultScope: Scope;
+  defaultEventId?: string;
   onDone: () => void;
 }) {
   const queryClient = useQueryClient();
@@ -54,10 +58,14 @@ function TodoForm({
         due_date: dueDate || null,
         ...(scope === "company" && { assignee_id: assigneeId || null }),
       };
-      return todo ? todosApi.update(todo.id, fields) : todosApi.create({ scope, ...fields });
+      return todo
+        ? todosApi.update(todo.id, fields)
+        : todosApi.create({ scope, ...fields, event_id: defaultEventId ?? null });
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["todos"] });
+      await Promise.all(
+        [["todos"], ["events"], ["home"]].map((queryKey) => queryClient.invalidateQueries({ queryKey })),
+      );
       onDone();
     },
   });

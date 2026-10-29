@@ -11,18 +11,23 @@ export function NoteNewPage() {
   const queryClient = useQueryClient();
   const [searchParams] = useSearchParams();
   const scope = searchParams.get("ambito") === "empresa" ? "company" : "personal";
+  const eventId = searchParams.get("evento");
 
   const create = useMutation({
-    mutationFn: (draft: NoteDraft) => notesApi.create(draft),
+    mutationFn: (draft: NoteDraft) => notesApi.create({ ...draft, event_id: eventId }),
     onSuccess: async (note) => {
       await queryClient.invalidateQueries({ queryKey: ["notes"] });
+      await queryClient.invalidateQueries({ queryKey: ["home"] });
       navigate(`/notas/${note.id}`, { replace: true });
     },
   });
 
   return (
     <>
-      <PageHeader title="Nueva nota" />
+      <PageHeader
+        title="Nueva nota"
+        description={eventId ? "Quedará vinculada al evento desde el que la creas." : undefined}
+      />
       <NoteEditor
         initial={{ scope, title: "", content_md: "" }}
         allowScopeChange

@@ -91,6 +91,14 @@ export function NoteDetailPage() {
               {data.scope === "company" ? "Empresa" : "Personal"}
             </Badge>
             {data.author.full_name} · Editada {formatDateTime(data.updated_at)}
+            {data.event && (
+              <>
+                {" · "}
+                <Link to={`/eventos/${data.event.id}`} className="text-amber-700 hover:underline">
+                  {data.event.title}
+                </Link>
+              </>
+            )}
           </p>
         </div>
         {data.can_edit && (

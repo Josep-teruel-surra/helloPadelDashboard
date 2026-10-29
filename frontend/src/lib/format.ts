@@ -67,3 +67,24 @@ export function markdownExcerpt(markdown: string, maxLength = 160): string {
     .trim();
   return text.length > maxLength ? `${text.slice(0, maxLength).trimEnd()}…` : text;
 }
+
+/** "7–9 nov", "28 nov – 2 dic" o "7 nov" si es un solo día. */
+export function formatDateRange(start: string, end: string): string {
+  if (start === end) return formatDate(start);
+  const a = parseLocalDate(start);
+  const b = parseLocalDate(end);
+  if (a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth()) {
+    return `${a.getDate()}–${formatDate(end)}`;
+  }
+  return `${formatDate(start)} – ${formatDate(end)}`;
+}
+
+/** Días que faltan hasta una fecha (negativo si ya pasó). */
+export function daysUntil(isoDate: string): number {
+  const ms = parseLocalDate(isoDate).getTime() - parseLocalDate(todayISO()).getTime();
+  return Math.round(ms / 86_400_000);
+}
+
+export function formatMoney(amount: string, currency: string): string {
+  return new Intl.NumberFormat("es-ES", { style: "currency", currency }).format(Number(amount));
+}

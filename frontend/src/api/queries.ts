@@ -1,7 +1,23 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { homeApi, notesApi, todosApi, usersApi, weatherApi } from "./endpoints";
-import type { Coordinates, NoteFilters, TodoFilters } from "./endpoints";
+import {
+  campusesApi,
+  eventsApi,
+  homeApi,
+  inventoryApi,
+  notesApi,
+  shipmentsApi,
+  todosApi,
+  usersApi,
+  weatherApi,
+} from "./endpoints";
+import type {
+  Coordinates,
+  EventFilters,
+  NoteFilters,
+  ShipmentFilters,
+  TodoFilters,
+} from "./endpoints";
 
 // Claves de caché centralizadas: invalidar ["todos"] refresca cualquier listado de tareas.
 export const queryKeys = {
@@ -11,6 +27,15 @@ export const queryKeys = {
   note: (id: string) => ["notes", "detail", id] as const,
   home: () => ["home"] as const,
   weather: (coords: Coordinates | null) => ["weather", coords] as const,
+  campuses: (filters: object = {}) => ["campuses", filters] as const,
+  campus: (id: string) => ["campuses", "detail", id] as const,
+  events: (filters: EventFilters = {}) => ["events", filters] as const,
+  event: (id: string) => ["events", "detail", id] as const,
+  products: (filters: object = {}) => ["products", filters] as const,
+  movements: (filters: object = {}) => ["products", "movements", filters] as const,
+  shipments: (filters: ShipmentFilters = {}) => ["shipments", filters] as const,
+  shipment: (id: string) => ["shipments", "detail", id] as const,
+  sentMaterial: (filters: object = {}) => ["shipments", "sent-material", filters] as const,
 };
 
 export function useUsers(includeInactive = false) {
@@ -48,3 +73,49 @@ export function useWeather(coords: Coordinates | null, enabled: boolean) {
     refetchInterval: 15 * 60_000,
   });
 }
+
+export function useCampuses(filters: { include_inactive?: boolean; q?: string } = {}) {
+  return useQuery({ queryKey: queryKeys.campuses(filters), queryFn: () => campusesApi.list(filters) });
+}
+
+export function useCampus(id: string) {
+  return useQuery({ queryKey: queryKeys.campus(id), queryFn: () => campusesApi.get(id) });
+}
+
+export function useEvents(filters: EventFilters = {}) {
+  return useQuery({ queryKey: queryKeys.events(filters), queryFn: () => eventsApi.list(filters) });
+}
+
+export function useEvent(id: string) {
+  return useQuery({ queryKey: queryKeys.event(id), queryFn: () => eventsApi.get(id) });
+}
+
+export function useProducts(filters: { include_inactive?: boolean; category?: "clothing" | "book" | "other" } = {}) {
+  return useQuery({ queryKey: queryKeys.products(filters), queryFn: () => inventoryApi.list(filters) });
+}
+
+export function useMovements(filters: { variant_id?: string; product_id?: string; limit?: number }, enabled = true) {
+  return useQuery({
+    queryKey: queryKeys.movements(filters),
+    queryFn: () => inventoryApi.movements(filters),
+    enabled,
+  });
+}
+
+export function useShipments(filters: ShipmentFilters = {}) {
+  return useQuery({ queryKey: queryKeys.shipments(filters), queryFn: () => shipmentsApi.list(filters) });
+}
+
+export function useShipment(id: string) {
+  return useQuery({ queryKey: queryKeys.shipment(id), queryFn: () => shipmentsApi.get(id) });
+}
+
+export function useSentMaterial(filters: { campus_id?: string; year?: number }) {
+  return useQuery({
+    queryKey: queryKeys.sentMaterial(filters),
+    queryFn: () => shipmentsApi.sentMaterial(filters),
+  });
+}
+
+/** Tras tocar envíos o stock: refresca todo lo que depende de ellos. */
+export const LOGISTICS_KEYS = [["shipments"], ["products"], ["events"], ["todos"], ["home"]] as const;
